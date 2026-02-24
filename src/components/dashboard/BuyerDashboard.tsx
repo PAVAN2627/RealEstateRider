@@ -97,6 +97,9 @@ const BuyerDashboard = () => {
   const wishlistCount = wishlistPropertyIds?.length || 0;
   const inquiriesCount = inquiries?.length || 0;
   const respondedInquiries = inquiries?.filter(inq => inq.status === 'responded').length || 0;
+  
+  // Count unique properties contacted (properties with inquiries)
+  const uniquePropertiesContacted = new Set(inquiries?.map(inq => inq.propertyId) || []).size;
 
   return (
     <div className="space-y-6">
@@ -131,10 +134,10 @@ const BuyerDashboard = () => {
           trendValue={respondedInquiries > 0 ? `${respondedInquiries} replied` : 'Waiting'}
         />
         <AnalyticsCard
-          title="Properties Viewed"
-          value="--"
-          trend="neutral"
-          trendValue="Coming soon"
+          title="Properties Contacted"
+          value={uniquePropertiesContacted}
+          trend={uniquePropertiesContacted > 0 ? 'up' : 'neutral'}
+          trendValue={uniquePropertiesContacted > 0 ? `${uniquePropertiesContacted} contacted` : 'None yet'}
         />
       </div>
 
