@@ -1,6 +1,5 @@
 import { motion } from "framer-motion";
-import { Search, MapPin, Home } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Home } from "lucide-react";
 import heroBg from "@/assets/hero-bg.png";
 
 const HeroSection = () => {
@@ -43,27 +42,6 @@ const HeroSection = () => {
             Discover premium properties across India. Buy, sell, or rent with
             verified agents and secure transactions.
           </motion.p>
-
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.3 }}
-            className="glass-card rounded-2xl p-4 max-w-xl"
-          >
-            <div className="flex flex-col sm:flex-row gap-3">
-              <div className="flex-1 flex items-center gap-2 px-4 py-2 rounded-xl bg-background/80">
-                <MapPin className="w-4 h-4 text-muted-foreground shrink-0" />
-                <input
-                  type="text"
-                  placeholder="Enter city or locality..."
-                  className="w-full bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none"
-                />
-              </div>
-              <Button className="gradient-primary text-primary-foreground border-0 px-6 gap-2">
-                <Search className="w-4 h-4" /> Search
-              </Button>
-            </div>
-          </motion.div>
 
           <motion.div
             initial={{ opacity: 0, y: 30 }}

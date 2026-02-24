@@ -171,7 +171,26 @@ const DashboardLayout = ({ children, links, title }: DashboardLayoutProps) => {
               RealEstate<span className="text-primary">Rider</span>
             </span>
           </Link>
-          <div className="w-10" /> {/* Spacer for centering */}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={handleLogout}
+            title="Logout"
+          >
+            <LogOut className="w-5 h-5" />
+          </Button>
+        </div>
+
+        {/* Desktop Header with Logout */}
+        <div className="hidden lg:flex sticky top-0 z-30 bg-card border-b border-border px-6 py-4 items-center justify-end">
+          <Button
+            onClick={handleLogout}
+            variant="outline"
+            className="gap-2"
+          >
+            <LogOut className="w-4 h-4" />
+            Logout
+          </Button>
         </div>
 
         <div className="p-6 lg:p-8">
