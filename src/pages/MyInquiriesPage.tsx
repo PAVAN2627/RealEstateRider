@@ -5,7 +5,7 @@ import DashboardLayout from '@/components/DashboardLayout';
 import { InquiryList } from '@/components/inquiry';
 import LoadingSpinner from '@/components/shared/LoadingSpinner';
 import ErrorMessage from '@/components/shared/ErrorMessage';
-import { LayoutDashboard, Home, Heart, MessageSquare, User, Map } from 'lucide-react';
+import { LayoutDashboard, Home, Heart, MessageSquare, User, Map as MapIcon } from 'lucide-react';
 import { getInquiriesByBuyer } from '@/services/inquiryService';
 import { getProperty } from '@/services/propertyService';
 import { Inquiry } from '@/types/inquiry.types';
@@ -76,7 +76,7 @@ const MyInquiriesPage = () => {
         return [
           { to: '/dashboard', label: 'Overview', icon: LayoutDashboard },
           { to: '/properties', label: 'Browse Properties', icon: Home },
-          { to: '/properties/map', label: 'Map View', icon: Map },
+          { to: '/properties/map', label: 'Map View', icon: MapIcon },
           { to: '/wishlist', label: 'Wishlist', icon: Heart },
           { to: '/my-inquiries', label: 'My Inquiries', icon: MessageSquare },
           { to: '/profile', label: 'Profile', icon: User },
