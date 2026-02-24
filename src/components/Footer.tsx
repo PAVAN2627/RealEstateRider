@@ -1,4 +1,4 @@
-import { Building2 } from "lucide-react";
+import { Building2, Mail, Phone, MapPin, Facebook, Twitter, Instagram, Linkedin } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const Footer = () => {
@@ -15,34 +15,65 @@ const Footer = () => {
                 RealEstate<span className="text-accent">Rider</span>
               </span>
             </div>
-            <p className="text-sm opacity-60 leading-relaxed">
+            <p className="text-sm opacity-60 leading-relaxed mb-4">
               India's most trusted real estate platform. Buy, sell, or rent properties with confidence.
             </p>
+            <div className="space-y-2 text-sm opacity-60">
+              <div className="flex items-center gap-2">
+                <Mail className="w-4 h-4" />
+                <span>support@realestaterider.com</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Phone className="w-4 h-4" />
+                <span>+91 1800-123-4567</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <MapPin className="w-4 h-4" />
+                <span>Mumbai, Maharashtra, India</span>
+              </div>
+            </div>
+            <div className="flex gap-3 mt-4">
+              <a href="https://facebook.com" target="_blank" rel="noopener noreferrer" className="w-8 h-8 rounded-full bg-background/10 hover:bg-background/20 flex items-center justify-center transition-colors">
+                <Facebook className="w-4 h-4" />
+              </a>
+              <a href="https://twitter.com" target="_blank" rel="noopener noreferrer" className="w-8 h-8 rounded-full bg-background/10 hover:bg-background/20 flex items-center justify-center transition-colors">
+                <Twitter className="w-4 h-4" />
+              </a>
+              <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" className="w-8 h-8 rounded-full bg-background/10 hover:bg-background/20 flex items-center justify-center transition-colors">
+                <Instagram className="w-4 h-4" />
+              </a>
+              <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" className="w-8 h-8 rounded-full bg-background/10 hover:bg-background/20 flex items-center justify-center transition-colors">
+                <Linkedin className="w-4 h-4" />
+              </a>
+            </div>
           </div>
 
           {[
             {
               title: "Quick Links",
               links: [
-                { label: "Properties", to: "/properties" },
+                { label: "Browse Properties", to: "/properties" },
                 { label: "About Us", to: "/about" },
-                { label: "Contact", to: "/contact" },
+                { label: "Contact Us", to: "/contact" },
+                { label: "FAQs", to: "/faqs" },
               ],
             },
             {
               title: "For Users",
               links: [
+                { label: "Login", to: "/login" },
+                { label: "Register", to: "/register" },
                 { label: "Buyer Dashboard", to: "/dashboard" },
-                { label: "Seller Dashboard", to: "/dashboard" },
-                { label: "Agent Portal", to: "/agent-dashboard" },
+                { label: "Post Property", to: "/properties/new" },
               ],
             },
             {
               title: "Legal",
               links: [
-                { label: "Privacy Policy", to: "#" },
-                { label: "Terms of Service", to: "#" },
-                { label: "Cookie Policy", to: "#" },
+                { label: "Privacy Policy", to: "/privacy-policy" },
+                { label: "Terms of Service", to: "/terms-of-service" },
+                { label: "Cookie Policy", to: "/cookie-policy" },
+                { label: "Refund Policy", to: "/refund-policy" },
               ],
             },
           ].map((section) => (
