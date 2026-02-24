@@ -25,6 +25,7 @@ export default function RegisterForm() {
   const { register } = useAuth();
   const navigate = useNavigate();
   
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -36,6 +37,12 @@ export default function RegisterForm() {
 
   const validateForm = (): boolean => {
     const errors: Record<string, string> = {};
+
+    if (!name || name.trim().length === 0) {
+      errors.name = 'Name is required';
+    } else if (name.trim().length < 2) {
+      errors.name = 'Name must be at least 2 characters';
+    }
 
     if (!email) {
       errors.email = 'Email is required';
@@ -78,7 +85,7 @@ export default function RegisterForm() {
 
     try {
       // Register user first
-      const userId = await register(email, password, role as UserRole);
+      const userId = await register(email, password, role as UserRole, name.trim());
       
       // If agent, upload Aadhar document
       if (role === UserRole.AGENT && aadharDocument && userId) {
@@ -108,6 +115,25 @@ export default function RegisterForm() {
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="name">Full Name</Label>
+            <Input
+              id="name"
+              name="name"
+              type="text"
+              autoComplete="name"
+              placeholder="John Doe"
+              value={name}
+              onChange={(e) => {
+                setName(e.target.value);
+                setFieldErrors(prev => ({ ...prev, name: undefined }));
+              }}
+              className={fieldErrors.name ? 'border-red-500' : ''}
+              disabled={loading}
+            />
+            {fieldErrors.name && <p className="text-sm text-red-500">{fieldErrors.name}</p>}
+          </div>
+
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
             <Input

@@ -20,7 +20,7 @@ interface AuthContextValue {
   user: User | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string, role: UserRole) => Promise<string | undefined>;
+  register: (email: string, password: string, role: UserRole, name?: string) => Promise<string | undefined>;
   logout: () => Promise<void>;
   isAuthenticated: boolean;
   hasRole: (roles: UserRole[]) => boolean;
@@ -120,11 +120,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const register = async (
     email: string,
     password: string,
-    role: UserRole
+    role: UserRole,
+    name?: string
   ): Promise<string | undefined> => {
     setLoading(true);
     try {
-      const userData = await authService.register(email, password, role);
+      const userData = await authService.register(email, password, role, name);
       setUser(userData);
       return userData.uid;
     } catch (error) {

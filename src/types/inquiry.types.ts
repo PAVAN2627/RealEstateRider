@@ -9,6 +9,17 @@ export enum InquiryStatus {
 }
 
 /**
+ * Message in a conversation
+ */
+export interface Message {
+  id: string;
+  senderId: string;
+  text: string;
+  timestamp: Timestamp;
+  read: boolean;
+}
+
+/**
  * Inquiry interface matching Firestore inquiries collection
  */
 export interface Inquiry {
@@ -16,11 +27,13 @@ export interface Inquiry {
   propertyId: string;             // Reference to properties collection
   buyerId: string;                // Reference to users collection
   agentId: string;                // Reference to users/agentProfiles collection
-  message: string;                // Max 1000 characters
+  message: string;                // Initial message (for backward compatibility)
+  messages: Message[];            // Array of all messages in conversation
   status: InquiryStatus;
-  response?: string;
+  response?: string;              // For backward compatibility
   createdAt: Timestamp;
   respondedAt?: Timestamp;
+  lastMessageAt: Timestamp;       // Timestamp of last message
 }
 
 /**
@@ -32,3 +45,4 @@ export interface CreateInquiryData {
   agentId: string;
   message: string;
 }
+

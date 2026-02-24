@@ -64,14 +64,25 @@ export const createInquiry = async (
 
     const now = Timestamp.now();
 
+    // Create initial message
+    const initialMessage = {
+      id: `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      senderId: inquiryData.buyerId,
+      text: inquiryData.message.trim(),
+      timestamp: now,
+      read: false,
+    };
+
     // Create inquiry document
     const inquiryDoc = {
       propertyId: inquiryData.propertyId,
       buyerId: inquiryData.buyerId,
       agentId: inquiryData.agentId,
       message: inquiryData.message.trim(),
+      messages: [initialMessage],
       status: InquiryStatus.PENDING,
       createdAt: now,
+      lastMessageAt: now,
     };
 
     const docRef = await addDoc(
@@ -321,6 +332,112 @@ export const updateInquiryStatus = async (
     });
   } catch (error) {
     console.error('Error updating inquiry status:', error);
+    throw error;
+  }
+};
+
+/**
+ * Sends a message in an existing inquiry conversation
+ * Supports continuous back-and-forth messaging
+ * 
+ * @param inquiryId - The inquiry document ID
+ * @param senderId - The user ID of the message sender
+ * @param messageText - The message text
+ * @returns Promise that resolves when the message is sent
+ */
+export const sendMessage = async (
+  inquiryId: string,
+  senderId: string,
+  messageText: string
+): Promise<void> => {
+  try {
+    if (!inquiryId || !senderId || !messageText) {
+      throw new Error('Inquiry ID, sender ID, and message text are required');
+    }
+
+    validateMessage(messageText);
+
+    const inquiryRef = doc(db, INQUIRIES_COLLECTION, inquiryId);
+    const inquiryDoc = await getDoc(inquiryRef);
+    
+    if (!inquiryDoc.exists()) {
+      throw new Error('Inquiry not found');
+    }
+
+    const inquiryData = inquiryDoc.data() as Inquiry;
+    const now = Timestamp.now();
+
+    // Create new message object
+    const newMessage = {
+      id: `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      senderId,
+      text: messageText.trim(),
+      timestamp: now,
+      read: false,
+    };
+
+    // Get existing messages or initialize empty array
+    const existingMessages = inquiryData.messages || [];
+
+    // Update inquiry with new message
+    await updateDoc(inquiryRef, {
+      messages: [...existingMessages, newMessage],
+      lastMessageAt: now,
+      status: InquiryStatus.RESPONDED, // Mark as responded
+    });
+
+    // Determine recipient (if sender is buyer, recipient is agent, and vice versa)
+    const recipientId = senderId === inquiryData.buyerId ? inquiryData.agentId : inquiryData.buyerId;
+
+    // Create notification for recipient
+    await createNotification({
+      userId: recipientId,
+      message: 'You have a new message',
+      type: NotificationType.INQUIRY_RESPONSE,
+      relatedEntityId: inquiryId,
+    });
+
+    // Log message activity
+    await logActivity({
+      userId: senderId,
+      actionType: 'message_sent',
+      entityId: inquiryId,
+      metadata: {
+        recipientId,
+        propertyId: inquiryData.propertyId
+      }
+    });
+  } catch (error) {
+    console.error('Error sending message:', error);
+    throw error;
+  }
+};
+
+/**
+ * Gets a single inquiry by ID
+ * 
+ * @param inquiryId - The inquiry document ID
+ * @returns Promise resolving to the Inquiry
+ */
+export const getInquiryById = async (inquiryId: string): Promise<Inquiry | null> => {
+  try {
+    if (!inquiryId) {
+      throw new Error('Inquiry ID is required');
+    }
+
+    const inquiryRef = doc(db, INQUIRIES_COLLECTION, inquiryId);
+    const inquiryDoc = await getDoc(inquiryRef);
+
+    if (!inquiryDoc.exists()) {
+      return null;
+    }
+
+    return {
+      id: inquiryDoc.id,
+      ...inquiryDoc.data(),
+    } as Inquiry;
+  } catch (error) {
+    console.error('Error fetching inquiry:', error);
     throw error;
   }
 };

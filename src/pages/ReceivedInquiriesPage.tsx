@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { UserRole } from '@/types/user.types';
 import DashboardLayout from '@/components/DashboardLayout';
-import { InquiryList } from '@/components/inquiry';
+import WhatsAppChatInterface from '@/components/inquiry/WhatsAppChatInterface';
 import LoadingSpinner from '@/components/shared/LoadingSpinner';
 import ErrorMessage from '@/components/shared/ErrorMessage';
 import { LayoutDashboard, Home, Heart, MessageSquare, Settings } from 'lucide-react';
@@ -33,7 +33,10 @@ const ReceivedInquiriesPage = () => {
     if (!user) return;
 
     try {
-      setLoading(true);
+      // Only show loading spinner on initial load
+      if (inquiries.length === 0) {
+        setLoading(true);
+      }
       setError(null);
 
       // Fetch agent's received inquiries
@@ -113,20 +116,25 @@ const ReceivedInquiriesPage = () => {
   return (
     <DashboardLayout links={getSidebarLinks()} title="Received Inquiries">
       <div className="mb-6">
-        <h1 className="text-3xl font-bold font-heading mb-2">Received Inquiries</h1>
+        <h1 className="text-3xl font-bold font-heading mb-2">Messages</h1>
         <p className="text-muted-foreground">
-          Manage inquiries from potential buyers
+          Chat with buyers about your properties
         </p>
       </div>
 
-      <InquiryList
-        inquiries={inquiries}
-        properties={properties}
-        loading={loading}
-        error={error}
-        onRefresh={fetchInquiries}
-        onResponseSubmitted={fetchInquiries}
-      />
+      {loading ? (
+        <div className="flex items-center justify-center min-h-[400px]">
+          <LoadingSpinner />
+        </div>
+      ) : error ? (
+        <ErrorMessage message={error} />
+      ) : (
+        <WhatsAppChatInterface
+          inquiries={inquiries}
+          properties={properties}
+          onRefresh={fetchInquiries}
+        />
+      )}
     </DashboardLayout>
   );
 };

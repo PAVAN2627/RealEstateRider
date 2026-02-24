@@ -20,12 +20,13 @@ import { User, UserRole, VerificationStatus } from '../types/user.types';
 import { logActivity } from './activityLogService';
 
 /**
- * Register a new user with email, password, and role
+ * Register a new user with email, password, role, and name
  * Creates Firebase Auth account and user document in Firestore
  * 
  * @param email - User email address
  * @param password - User password
  * @param role - User role (buyer, seller, agent, admin)
+ * @param name - User's full name
  * @returns Promise<User> - Created user object
  * @throws Error if registration fails
  * 
@@ -34,7 +35,8 @@ import { logActivity } from './activityLogService';
 export async function register(
   email: string,
   password: string,
-  role: UserRole
+  role: UserRole,
+  name: string = ''
 ): Promise<User> {
   try {
     // Create Firebase Auth account
@@ -55,7 +57,7 @@ export async function register(
       verificationStatus,
       createdAt: Timestamp.now(),
       profile: {
-        name: ''
+        name: name.trim() || email.split('@')[0] // Use name or fallback to email username
       }
     };
 

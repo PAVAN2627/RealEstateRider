@@ -44,8 +44,10 @@ const createMockInquiry = (id: string, overrides?: Partial<Inquiry>): Inquiry =>
   buyerId: 'buyer1',
   agentId: 'agent1',
   message: `Test inquiry message ${id}`,
+  messages: [],
   status: InquiryStatus.PENDING,
   createdAt: Timestamp.fromMillis(Date.now() - parseInt(id) * 1000),
+  lastMessageAt: Timestamp.fromMillis(Date.now() - parseInt(id) * 1000),
   ...overrides,
 });
 
