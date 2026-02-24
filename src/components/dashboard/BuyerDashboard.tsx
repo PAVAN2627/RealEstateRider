@@ -23,7 +23,7 @@ import ErrorMessage from '@/components/shared/ErrorMessage';
 
 const BuyerDashboard = () => {
   const { user } = useAuth();
-  const { wishlist, loading: wishlistLoading, error: wishlistError } = useWishlist();
+  const { wishlistPropertyIds, loading: wishlistLoading, error: wishlistError } = useWishlist();
   const { inquiries, loading: inquiriesLoading, error: inquiriesError, fetchInquiriesByBuyer } = useInquiries();
   const [recentActivity, setRecentActivity] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -94,7 +94,7 @@ const BuyerDashboard = () => {
     );
   }
 
-  const wishlistCount = wishlist?.propertyIds?.length || 0;
+  const wishlistCount = wishlistPropertyIds?.length || 0;
   const inquiriesCount = inquiries?.length || 0;
   const respondedInquiries = inquiries?.filter(inq => inq.status === 'responded').length || 0;
 
