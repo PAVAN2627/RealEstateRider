@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { PropertyDetails } from '@/components/property/PropertyDetails';
+import PropertyDetails from '@/components/property/PropertyDetails';
 import LoadingSpinner from '@/components/shared/LoadingSpinner';
 import ErrorMessage from '@/components/shared/ErrorMessage';
 import { Button } from '@/components/ui/button';
