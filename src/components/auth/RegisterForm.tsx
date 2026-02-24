@@ -1,0 +1,248 @@
+/**
+ * RegisterForm Component
+ * 
+ * User registration form with email, password, and role selection.
+ * Includes validation and redirects to Aadhar upload after successful registration.
+ * 
+ * Requirements: 1.1, 21.2
+ */
+
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
+import { UserRole } from '../../types/user.types';
+import { Button } from '../ui/button';
+import { Input } from '../ui/input';
+import { Label } from '../ui/label';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import { Upload } from 'lucide-react';
+import LoadingSpinner from '../shared/LoadingSpinner';
+import ErrorMessage from '../shared/ErrorMessage';
+import { uploadAadharDocument } from '../../services/storageService';
+
+export default function RegisterForm() {
+  const { register } = useAuth();
+  const navigate = useNavigate();
+  
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [role, setRole] = useState<UserRole | ''>('');
+  const [aadharDocument, setAadharDocument] = useState<File | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+
+  const validateForm = (): boolean => {
+    const errors: Record<string, string> = {};
+
+    if (!email) {
+      errors.email = 'Email is required';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      errors.email = 'Invalid email format';
+    }
+
+    if (!password) {
+      errors.password = 'Password is required';
+    } else if (password.length < 6) {
+      errors.password = 'Password must be at least 6 characters';
+    }
+
+    if (!confirmPassword) {
+      errors.confirmPassword = 'Please confirm your password';
+    } else if (password !== confirmPassword) {
+      errors.confirmPassword = 'Passwords do not match';
+    }
+
+    if (!role) {
+      errors.role = 'Please select a role';
+    }
+
+    // Validate Aadhar document for agents
+    if (role === UserRole.AGENT && !aadharDocument) {
+      errors.aadharDocument = 'Aadhar document is required for agents';
+    }
+
+    setFieldErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!validateForm()) return;
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      // Register user first
+      const userId = await register(email, password, role as UserRole);
+      
+      // If agent, upload Aadhar document
+      if (role === UserRole.AGENT && aadharDocument && userId) {
+        await uploadAadharDocument(aadharDocument, userId);
+      }
+      
+      // Redirect to pending approval page for agents, login for others
+      if (role === UserRole.AGENT) {
+        navigate('/pending-approval');
+      } else {
+        // Buyers and Sellers are auto-approved, go to login
+        navigate('/login');
+      }
+    } catch (err) {
+      console.error('Registration error:', err);
+      setError(err instanceof Error ? err.message : 'Registration failed');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <Card className="w-full max-w-md">
+      <CardHeader>
+        <CardTitle>Register</CardTitle>
+        <CardDescription>Create your EstateSphere account</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="email">Email</Label>
+            <Input
+              id="email"
+              type="email"
+              placeholder="your@email.com"
+              value={email}
+              onChange={(e) => {
+                setEmail(e.target.value);
+                setFieldErrors(prev => ({ ...prev, email: undefined }));
+              }}
+              className={fieldErrors.email ? 'border-red-500' : ''}
+              disabled={loading}
+            />
+            {fieldErrors.email && <p className="text-sm text-red-500">{fieldErrors.email}</p>}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="password">Password</Label>
+            <Input
+              id="password"
+              type="password"
+              placeholder="••••••••"
+              value={password}
+              onChange={(e) => {
+                setPassword(e.target.value);
+                setFieldErrors(prev => ({ ...prev, password: undefined }));
+              }}
+              className={fieldErrors.password ? 'border-red-500' : ''}
+              disabled={loading}
+            />
+            {fieldErrors.password && <p className="text-sm text-red-500">{fieldErrors.password}</p>}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="confirmPassword">Confirm Password</Label>
+            <Input
+              id="confirmPassword"
+              type="password"
+              placeholder="••••••••"
+              value={confirmPassword}
+              onChange={(e) => {
+                setConfirmPassword(e.target.value);
+                setFieldErrors(prev => ({ ...prev, confirmPassword: undefined }));
+              }}
+              className={fieldErrors.confirmPassword ? 'border-red-500' : ''}
+              disabled={loading}
+            />
+            {fieldErrors.confirmPassword && <p className="text-sm text-red-500">{fieldErrors.confirmPassword}</p>}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="role">Role</Label>
+            <Select value={role} onValueChange={(value) => {
+              setRole(value as UserRole);
+              setFieldErrors(prev => ({ ...prev, role: undefined }));
+            }} disabled={loading}>
+              <SelectTrigger className={fieldErrors.role ? 'border-red-500' : ''}>
+                <SelectValue placeholder="Select your role" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={UserRole.BUYER}>Buyer</SelectItem>
+                <SelectItem value={UserRole.SELLER}>Seller</SelectItem>
+                <SelectItem value={UserRole.AGENT}>Be an Agent</SelectItem>
+              </SelectContent>
+            </Select>
+            {fieldErrors.role && <p className="text-sm text-red-500">{fieldErrors.role}</p>}
+          </div>
+
+          {/* Aadhar Document Upload for Agents */}
+          {role === UserRole.AGENT && (
+            <div className="space-y-2">
+              <Label htmlFor="aadharDocument">
+                Aadhar Document <span className="text-red-500">*</span>
+              </Label>
+              <div className="border-2 border-dashed border-gray-300 rounded-lg p-4">
+                <div className="flex items-center gap-4">
+                  <Upload className="h-8 w-8 text-gray-400" />
+                  <div className="flex-1">
+                    <Input
+                      id="aadharDocument"
+                      type="file"
+                      accept=".pdf,.jpg,.jpeg,.png"
+                      onChange={(e) => {
+                        if (e.target.files && e.target.files[0]) {
+                          setAadharDocument(e.target.files[0]);
+                          setFieldErrors(prev => ({ ...prev, aadharDocument: undefined }));
+                        }
+                      }}
+                      className={fieldErrors.aadharDocument ? 'border-red-500' : ''}
+                      disabled={loading}
+                    />
+                    {aadharDocument && (
+                      <p className="text-sm text-muted-foreground mt-2">
+                        Selected: {aadharDocument.name}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+              {fieldErrors.aadharDocument && (
+                <p className="text-sm text-red-500">{fieldErrors.aadharDocument}</p>
+              )}
+              <p className="text-xs text-muted-foreground">
+                Upload your Aadhar card (PDF, JPG, or PNG, max 500KB)
+              </p>
+            </div>
+          )}
+
+          {error && <ErrorMessage message={error} />}
+
+          <Button type="submit" className="w-full" disabled={loading}>
+            {loading ? (
+              <>
+                <LoadingSpinner size="sm" />
+                <span className="ml-2">Creating account...</span>
+              </>
+            ) : (
+              'Register'
+            )}
+          </Button>
+
+          <p className="text-sm text-center text-muted-foreground">
+            Already have an account?{' '}
+            <button
+              type="button"
+              onClick={() => navigate('/login')}
+              className="text-primary hover:underline"
+              disabled={loading}
+            >
+              Login here
+            </button>
+          </p>
+        </form>
+      </CardContent>
+    </Card>
+  );
+}

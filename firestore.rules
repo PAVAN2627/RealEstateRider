@@ -1,0 +1,187 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    function isAdmin() {
+      return isAuthenticated() && 
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+    
+    function isAgent() {
+      return isAuthenticated() && 
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'agent';
+    }
+    
+    function isSeller() {
+      return isAuthenticated() && 
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'seller';
+    }
+    
+    function isBuyer() {
+      return isAuthenticated() && 
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'buyer';
+    }
+    
+    function isApproved() {
+      return isAuthenticated() && 
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.verificationStatus == 'approved';
+    }
+    
+    // Users collection rules
+    match /users/{userId} {
+      // Users can read their own document, admins can read all
+      allow read: if isOwner(userId) || isAdmin();
+      
+      // Users can create their own document during registration
+      allow create: if isOwner(userId);
+      
+      // Users can update their own document (except role and verificationStatus)
+      // Admins can update any user document
+      allow update: if (isOwner(userId) && 
+                       request.resource.data.role == resource.data.role &&
+                       request.resource.data.verificationStatus == resource.data.verificationStatus) ||
+                       isAdmin();
+      
+      // Only admins can delete users
+      allow delete: if isAdmin();
+    }
+
+    // Properties collection rules
+    match /properties/{propertyId} {
+      // All authenticated users can read approved properties
+      // Property owners can read their own properties (any status)
+      // Admins can read all properties
+      allow read: if (isAuthenticated() && resource.data.verificationStatus == 'approved') ||
+                     (isAuthenticated() && resource.data.ownerId == request.auth.uid) ||
+                     isAdmin();
+      
+      // Only approved sellers and agents can create properties
+      allow create: if isAuthenticated() && 
+                       isApproved() && 
+                       (isSeller() || isAgent()) &&
+                       request.resource.data.ownerId == request.auth.uid;
+      
+      // Property owners can update their own properties
+      // Admins can update any property
+      allow update: if (isAuthenticated() && resource.data.ownerId == request.auth.uid) ||
+                       isAdmin();
+      
+      // Property owners can delete their own properties
+      // Admins can delete any property
+      allow delete: if (isAuthenticated() && resource.data.ownerId == request.auth.uid) ||
+                       isAdmin();
+    }
+
+    // Inquiries collection rules
+    match /inquiries/{inquiryId} {
+      // Buyers can read their own inquiries
+      // Agents can read inquiries addressed to them
+      // Admins can read all inquiries
+      allow read: if (isAuthenticated() && resource.data.buyerId == request.auth.uid) ||
+                     (isAuthenticated() && resource.data.agentId == request.auth.uid) ||
+                     isAdmin();
+      
+      // Only approved buyers can create inquiries
+      allow create: if isAuthenticated() && 
+                       isApproved() && 
+                       isBuyer() &&
+                       request.resource.data.buyerId == request.auth.uid;
+      
+      // Agents can update inquiries addressed to them (to add responses)
+      // Buyers cannot update inquiries after creation
+      allow update: if (isAuthenticated() && resource.data.agentId == request.auth.uid && isAgent());
+      
+      // Buyers can delete their own inquiries
+      // Admins can delete any inquiry
+      allow delete: if (isAuthenticated() && resource.data.buyerId == request.auth.uid) ||
+                       isAdmin();
+    }
+
+    // Wishlists collection rules
+    match /wishlists/{wishlistId} {
+      // Users can only read their own wishlist
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      
+      // Users can create their own wishlist
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      
+      // Users can update their own wishlist
+      allow update: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      
+      // Users can delete their own wishlist
+      allow delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
+    }
+
+    // Notifications collection rules
+    match /notifications/{notificationId} {
+      // Users can only read their own notifications
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      
+      // Allow authenticated users to create notifications (for system-generated notifications)
+      allow create: if isAuthenticated();
+      
+      // Users can update read status of their own notifications
+      allow update: if isAuthenticated() && 
+                       resource.data.userId == request.auth.uid &&
+                       request.resource.data.userId == resource.data.userId &&
+                       request.resource.data.type == resource.data.type &&
+                       request.resource.data.message == resource.data.message;
+      
+      // Users can delete their own notifications
+      allow delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
+    }
+
+    // Activity Logs collection rules
+    match /activityLogs/{logId} {
+      // Only admins can read activity logs
+      allow read: if isAdmin();
+      
+      // Allow authenticated users to create activity logs (for system-generated logs)
+      allow create: if isAuthenticated();
+      
+      // No updates allowed
+      allow update: if false;
+      
+      // Only admins can delete activity logs
+      allow delete: if isAdmin();
+    }
+
+    // Agent Profiles collection rules
+    match /agentProfiles/{agentId} {
+      // All authenticated users can read verified agent profiles
+      // Agents can read their own profile (any verification status)
+      // Admins can read all profiles
+      allow read: if (isAuthenticated() && resource.data.verificationStatus == 'approved') ||
+                     (isAuthenticated() && agentId == request.auth.uid) ||
+                     isAdmin();
+      
+      // Only agents can create their own profile
+      allow create: if isAuthenticated() && 
+                       isAgent() && 
+                       agentId == request.auth.uid;
+      
+      // Agents can update their own profile
+      // Admins can update any profile
+      allow update: if (isAuthenticated() && agentId == request.auth.uid) ||
+                       isAdmin();
+      
+      // Only admins can delete agent profiles
+      allow delete: if isAdmin();
+    }
+    
+    // Default deny all other collections
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

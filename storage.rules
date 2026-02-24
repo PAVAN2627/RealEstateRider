@@ -1,0 +1,104 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    function isAdmin() {
+      return isAuthenticated() && 
+             firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+    
+    function isValidImageFile() {
+      return request.resource.contentType.matches('image/.*');
+    }
+    
+    function isValidDocumentFile() {
+      return request.resource.contentType.matches('image/.*') || 
+             request.resource.contentType == 'application/pdf';
+    }
+    
+    function isValidFileSize(maxSizeMB) {
+      return request.resource.size < maxSizeMB * 1024 * 1024;
+    }
+    
+    // Aadhar documents storage rules
+    match /aadhar-documents/{userId}/{fileName} {
+      // Only admins can read Aadhar documents
+      allow read: if isAdmin();
+      
+      // Users can upload their own Aadhar document
+      // Must be image or PDF, max 5MB
+      allow write: if isOwner(userId) && 
+                      isValidDocumentFile() && 
+                      isValidFileSize(5);
+      
+      // Users can delete their own Aadhar document
+      allow delete: if isOwner(userId) || isAdmin();
+    }
+
+    // Property images storage rules
+    match /property-images/{propertyId}/{fileName} {
+      // All authenticated users can read property images
+      allow read: if isAuthenticated();
+      
+      // Property owners can upload images to their properties
+      // Must be image file, max 5MB
+      allow write: if isAuthenticated() && 
+                      isValidImageFile() && 
+                      isValidFileSize(5) &&
+                      firestore.get(/databases/(default)/documents/properties/$(propertyId)).data.ownerId == request.auth.uid;
+      
+      // Property owners can delete their uploaded images
+      allow delete: if isAuthenticated() &&
+                       firestore.get(/databases/(default)/documents/properties/$(propertyId)).data.ownerId == request.auth.uid;
+    }
+
+    // Ownership documents storage rules
+    match /ownership-documents/{propertyId}/{fileName} {
+      // Admins and property owners can read ownership documents
+      allow read: if isAdmin() || 
+                     (isAuthenticated() && 
+                      firestore.get(/databases/(default)/documents/properties/$(propertyId)).data.ownerId == request.auth.uid);
+      
+      // Property owners can upload ownership documents
+      // Must be image or PDF, max 10MB
+      allow write: if isAuthenticated() && 
+                      isValidDocumentFile() && 
+                      isValidFileSize(10) &&
+                      firestore.get(/databases/(default)/documents/properties/$(propertyId)).data.ownerId == request.auth.uid;
+      
+      // Property owners can delete their ownership documents
+      allow delete: if isAuthenticated() && 
+                       firestore.get(/databases/(default)/documents/properties/$(propertyId)).data.ownerId == request.auth.uid;
+    }
+
+    // Agent photos storage rules
+    match /agent-photos/{agentId}/{fileName} {
+      // All authenticated users can read agent photos
+      allow read: if isAuthenticated();
+      
+      // Agents can upload their own profile photo
+      // Must be image file, max 2MB
+      allow write: if isOwner(agentId) && 
+                      isValidImageFile() && 
+                      isValidFileSize(2);
+      
+      // Agents can delete their own profile photo
+      allow delete: if isOwner(agentId);
+    }
+    
+    // Default deny all other paths
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}
