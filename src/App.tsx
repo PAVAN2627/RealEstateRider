@@ -18,6 +18,10 @@ import Register from "./pages/Register";
 import NotFound from "./pages/NotFound";
 import AadharUploadPage from "./pages/AadharUploadPage";
 import PendingApprovalPage from "./pages/PendingApprovalPage";
+import PrivacyPolicyPage from "./pages/PrivacyPolicyPage";
+import TermsOfServicePage from "./pages/TermsOfServicePage";
+import CookiePolicyPage from "./pages/CookiePolicyPage";
+import RefundPolicyPage from "./pages/RefundPolicyPage";
 
 // Protected Pages - Lazy loaded for code splitting
 // Requirement 22.1: Implement code splitting for page components
@@ -68,6 +72,12 @@ const App = () => (
                   <Route path="/register" element={<Register />} />
                   <Route path="/aadhar-upload" element={<AadharUploadPage />} />
                   <Route path="/pending-approval" element={<PendingApprovalPage />} />
+                  
+                  {/* Legal Pages */}
+                  <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
+                  <Route path="/terms-of-service" element={<TermsOfServicePage />} />
+                  <Route path="/cookie-policy" element={<CookiePolicyPage />} />
+                  <Route path="/refund-policy" element={<RefundPolicyPage />} />
 
                   {/* Protected Routes - Buyer Only */}
                   <Route
