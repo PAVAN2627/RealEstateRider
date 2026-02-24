@@ -330,6 +330,20 @@ export default function PropertyForm({ property, onSuccess, onCancel }: Property
       // Combine existing and new image URLs
       const allImageUrls = [...existingImages, ...base64Images];
 
+      // Handle ownership document upload
+      let ownershipDocumentUrls: string[] = property?.ownershipDocumentUrls || [];
+      if (ownershipDocument) {
+        try {
+          const documentBase64 = await uploadPropertyImage(ownershipDocument, user.uid);
+          ownershipDocumentUrls = [...ownershipDocumentUrls, documentBase64];
+        } catch (uploadError: any) {
+          console.error('Error uploading document:', uploadError);
+          setError(`Failed to upload document: ${uploadError.message}`);
+          setSubmitting(false);
+          return;
+        }
+      }
+
       // Prepare location data
       const location: {
         address: string;
@@ -362,11 +376,12 @@ export default function PropertyForm({ property, onSuccess, onCancel }: Property
             location,
             availabilityStatus: formData.availabilityStatus,
             imageUrls: allImageUrls,
+            ownershipDocumentUrls,
           },
           user.uid
         );
       } else {
-        // Create new property with images
+        // Create new property with images and documents
         const propertyData: any = {
           title: formData.title.trim(),
           description: formData.description.trim(),
@@ -375,6 +390,7 @@ export default function PropertyForm({ property, onSuccess, onCancel }: Property
           location,
           availabilityStatus: formData.availabilityStatus,
           imageUrls: allImageUrls,
+          ownershipDocumentUrls,
           ownerId: user.uid,
           ownerRole: user.role === 'agent' ? 'agent' : 'seller',
         };

@@ -380,6 +380,53 @@ export default function PropertyDetails({
               </CardContent>
             </Card>
           )}
+
+          {/* Property Documents Section - Visible to Buyers and Admins */}
+          {(user?.role === UserRole.BUYER || user?.role === UserRole.ADMIN) && 
+           property.ownershipDocumentUrls && 
+           property.ownershipDocumentUrls.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Property Documents</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  <p className="text-sm text-muted-foreground">
+                    Ownership and verification documents
+                  </p>
+                  {property.ownershipDocumentUrls.map((docUrl, index) => (
+                    <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-blue-500/10 rounded">
+                          <svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                          </svg>
+                        </div>
+                        <div>
+                          <div className="font-medium">Document {index + 1}</div>
+                          <div className="text-xs text-muted-foreground">Property ownership document</div>
+                        </div>
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          // Open document in new tab
+                          const link = document.createElement('a');
+                          link.href = docUrl;
+                          link.download = `property-document-${index + 1}`;
+                          link.target = '_blank';
+                          link.click();
+                        }}
+                      >
+                        View
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </div>
       </div>
     </div>
