@@ -108,21 +108,21 @@ export async function login(email: string, password: string): Promise<User> {
       throw new Error('Account access denied. Please contact administrator.');
     }
 
-    // Update last login timestamp
-    await updateDoc(doc(db, 'users', firebaseUser.uid), {
+    // Update last login timestamp asynchronously (don't block login)
+    updateDoc(doc(db, 'users', firebaseUser.uid), {
       lastLoginAt: Timestamp.now()
-    });
+    }).catch(err => console.error('Failed to update last login:', err));
 
-    // Log login activity
+    // Log login activity asynchronously (don't wait for it)
     // Requirement 18.2: Log user login events
-    await logActivity({
+    logActivity({
       userId: firebaseUser.uid,
       actionType: 'login',
       metadata: {
         email: user.email,
         role: user.role
       }
-    });
+    }).catch(err => console.error('Failed to log activity:', err));
 
     return user;
   } catch (error: any) {
