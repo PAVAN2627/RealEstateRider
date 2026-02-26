@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { Building2, Mail, Lock, Eye, EyeOff, User, Briefcase, Phone, Home, Upload } from "lucide-react";
+import { Building2, Mail, Lock, Eye, EyeOff, User, Briefcase, Phone, Home, Upload, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
@@ -18,7 +18,7 @@ const Register = () => {
   const navigate = useNavigate();
   const { register, isAuthenticated, user } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
-  const [role, setRole] = useState<"buyer" | "seller" | "agent">("buyer");
+  const [role, setRole] = useState<"buyer" | "seller" | "agent" | "admin">("buyer");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [firstName, setFirstName] = useState("");
@@ -26,6 +26,7 @@ const Register = () => {
   const [phone, setPhone] = useState("");
   const [loading, setLoading] = useState(false);
   const [aadharDocument, setAadharDocument] = useState<File | null>(null);
+  const [adminSecretKey, setAdminSecretKey] = useState("");
 
   /**
    * Redirect authenticated users to dashboard or pending approval page
@@ -45,7 +46,7 @@ const Register = () => {
   /**
    * Map UI role to UserRole enum
    */
-  const mapToUserRole = (uiRole: "buyer" | "seller" | "agent"): UserRole => {
+  const mapToUserRole = (uiRole: "buyer" | "seller" | "agent" | "admin"): UserRole => {
     switch (uiRole) {
       case "buyer":
         return UserRole.BUYER;
@@ -53,6 +54,8 @@ const Register = () => {
         return UserRole.SELLER;
       case "agent":
         return UserRole.AGENT;
+      case "admin":
+        return UserRole.ADMIN;
       default:
         return UserRole.BUYER;
     }
@@ -66,7 +69,13 @@ const Register = () => {
     e.preventDefault();
     
     // Validation
-    if (!email || !password || !firstName || !lastName) {
+    if (!email || !password) {
+      toast.error("Please fill in all required fields");
+      return;
+    }
+
+    // Validate name for non-admin users
+    if (role !== "admin" && (!firstName || !lastName)) {
       toast.error("Please fill in all required fields");
       return;
     }
@@ -76,8 +85,20 @@ const Register = () => {
       return;
     }
 
-    // Validate Aadhar document for all users
-    if (!aadharDocument) {
+    // Validate admin secret key if role is admin
+    if (role === "admin") {
+      if (!adminSecretKey || adminSecretKey.trim().length === 0) {
+        toast.error("Admin secret key is required");
+        return;
+      }
+      if (adminSecretKey !== import.meta.env.VITE_ADMIN_SECRET_KEY) {
+        toast.error("Invalid admin secret key");
+        return;
+      }
+    }
+
+    // Validate Aadhar document only for Sellers and Agents
+    if ((role === "seller" || role === "agent") && !aadharDocument) {
       toast.error("Please upload your Aadhar document for verification");
       return;
     }
@@ -85,10 +106,12 @@ const Register = () => {
     setLoading(true);
     try {
       const userRole = mapToUserRole(role);
-      const userId = await register(email, password, userRole);
+      const fullName = role === "admin" ? "Admin" : `${firstName} ${lastName}`.trim();
+      const userPhone = role === "admin" ? "" : phone;
+      const userId = await register(email, password, userRole, fullName, userPhone);
       
-      // Upload Aadhar document for all users
-      if (aadharDocument && userId) {
+      // Upload Aadhar document only for Sellers and Agents
+      if ((role === "seller" || role === "agent") && aadharDocument && userId) {
         try {
           const { uploadAadharDocument } = await import("@/services/storageService");
           const { updateUserProfile } = await import("@/services/userService");
@@ -181,11 +204,12 @@ const Register = () => {
           {/* Role Selection */}
           <div className="mb-6">
             <label className="text-sm font-medium text-foreground mb-2 block">I want to</label>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-4 gap-2">
               {([
                 { value: "buyer" as const, label: "Buy", icon: User },
                 { value: "seller" as const, label: "Sell", icon: Building2 },
                 { value: "agent" as const, label: "Be an Agent", icon: Briefcase },
+                { value: "admin" as const, label: "Admin", icon: Shield },
               ]).map((r) => (
                 <button
                   key={r.value}
@@ -205,32 +229,35 @@ const Register = () => {
           </div>
 
           <form onSubmit={handleRegister} className="space-y-4">
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="text-sm font-medium text-foreground mb-1.5 block">First Name</label>
-                <input
-                  type="text"
-                  value={firstName}
-                  onChange={(e) => setFirstName(e.target.value)}
-                  placeholder="John"
-                  required
-                  disabled={loading}
-                  className="w-full px-4 py-2.5 rounded-xl border border-input bg-background text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
-                />
+            {/* Name fields - Only for non-admin users */}
+            {role !== "admin" && (
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-sm font-medium text-foreground mb-1.5 block">First Name</label>
+                  <input
+                    type="text"
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
+                    placeholder="John"
+                    required
+                    disabled={loading}
+                    className="w-full px-4 py-2.5 rounded-xl border border-input bg-background text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-foreground mb-1.5 block">Last Name</label>
+                  <input
+                    type="text"
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
+                    placeholder="Doe"
+                    required
+                    disabled={loading}
+                    className="w-full px-4 py-2.5 rounded-xl border border-input bg-background text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
+                  />
+                </div>
               </div>
-              <div>
-                <label className="text-sm font-medium text-foreground mb-1.5 block">Last Name</label>
-                <input
-                  type="text"
-                  value={lastName}
-                  onChange={(e) => setLastName(e.target.value)}
-                  placeholder="Doe"
-                  required
-                  disabled={loading}
-                  className="w-full px-4 py-2.5 rounded-xl border border-input bg-background text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
-                />
-              </div>
-            </div>
+            )}
 
             <div>
               <label className="text-sm font-medium text-foreground mb-1.5 block">Email</label>
@@ -248,20 +275,23 @@ const Register = () => {
               </div>
             </div>
 
-            <div>
-              <label className="text-sm font-medium text-foreground mb-1.5 block">Phone (Optional)</label>
-              <div className="relative">
-                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <input 
-                  type="tel" 
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  placeholder="+91 98765 43210"
-                  disabled={loading}
-                  className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-input bg-background text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50" 
-                />
+            {/* Phone field - Only for non-admin users */}
+            {role !== "admin" && (
+              <div>
+                <label className="text-sm font-medium text-foreground mb-1.5 block">Phone (Optional)</label>
+                <div className="relative">
+                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <input 
+                    type="tel" 
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    placeholder="+91 98765 43210"
+                    disabled={loading}
+                    className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-input bg-background text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50" 
+                  />
+                </div>
               </div>
-            </div>
+            )}
 
             <div>
               <label className="text-sm font-medium text-foreground mb-1.5 block">Password</label>
@@ -288,49 +318,75 @@ const Register = () => {
               </div>
             </div>
 
-            {/* Aadhar Document Upload - Required for All Users */}
-            <div>
-              <label className="text-sm font-medium text-foreground mb-1.5 block">
-                Aadhar Document (ID Proof) <span className="text-destructive">*</span>
-              </label>
-              <div className="relative">
-                <input
-                  type="file"
-                  accept="image/jpeg,image/jpg,image/png,application/pdf"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file) {
-                      // Validate file size (500KB max for Base64 storage)
-                      if (file.size > 500 * 1024) {
-                        toast.error("File size must be less than 500KB");
-                        e.target.value = "";
-                        return;
-                      }
-                      setAadharDocument(file);
-                    }
-                  }}
-                  disabled={loading}
-                  className="hidden"
-                  id="aadhar-upload"
-                />
-                <label
-                  htmlFor="aadhar-upload"
-                  className={`flex items-center justify-center gap-2 w-full px-4 py-2.5 rounded-xl border-2 border-dashed cursor-pointer transition-colors ${
-                    aadharDocument
-                      ? "border-primary bg-primary/5"
-                      : "border-input hover:border-primary/50"
-                  } ${loading ? "opacity-50 cursor-not-allowed" : ""}`}
-                >
-                  <Upload className="w-4 h-4 text-muted-foreground" />
-                  <span className="text-sm text-foreground">
-                    {aadharDocument ? aadharDocument.name : "Upload Aadhar (JPG, PNG, PDF - Max 500KB)"}
-                  </span>
+            {/* Admin Secret Key - Only shown when Admin role is selected */}
+            {role === "admin" && (
+              <div>
+                <label className="text-sm font-medium text-foreground mb-1.5 block">
+                  Admin Secret Key <span className="text-destructive">*</span>
                 </label>
+                <div className="relative">
+                  <Shield className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <input 
+                    type="password" 
+                    value={adminSecretKey}
+                    onChange={(e) => setAdminSecretKey(e.target.value)}
+                    placeholder="Enter admin secret key"
+                    required={role === "admin"}
+                    disabled={loading}
+                    className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-input bg-background text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50" 
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Contact system administrator for the admin secret key
+                </p>
               </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                Required for account verification. Your document will be reviewed by our admin team for security.
-              </p>
-            </div>
+            )}
+
+            {/* Aadhar Document Upload - Only for Sellers and Agents */}
+            {(role === "seller" || role === "agent") && (
+              <div>
+                <label className="text-sm font-medium text-foreground mb-1.5 block">
+                  Aadhar Document (ID Proof) <span className="text-destructive">*</span>
+                </label>
+                <div className="relative">
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/jpg,image/png,application/pdf"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        // Validate file size (500KB max for Base64 storage)
+                        if (file.size > 500 * 1024) {
+                          toast.error("File size must be less than 500KB");
+                          e.target.value = "";
+                          return;
+                        }
+                        setAadharDocument(file);
+                      }
+                    }}
+                    disabled={loading}
+                    className="hidden"
+                    id="aadhar-upload"
+                  />
+                  <label
+                    htmlFor="aadhar-upload"
+                    className={`flex items-center justify-center gap-2 w-full px-4 py-2.5 rounded-xl border-2 border-dashed cursor-pointer transition-colors ${
+                      aadharDocument
+                        ? "border-primary bg-primary/5"
+                        : "border-input hover:border-primary/50"
+                    } ${loading ? "opacity-50 cursor-not-allowed" : ""}`}
+                  >
+                    <Upload className="w-4 h-4 text-muted-foreground" />
+                    <span className="text-sm text-foreground">
+                      {aadharDocument ? aadharDocument.name : "Upload Aadhar (JPG, PNG, PDF - Max 500KB)"}
+                    </span>
+                  </label>
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Required for account verification. Your document will be reviewed by our admin team for security.
+                </p>
+              </div>
+            )}
 
             <Button 
               type="submit" 
