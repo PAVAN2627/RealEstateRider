@@ -26,7 +26,7 @@ import {
   writeBatch
 } from 'firebase/firestore';
 import { db } from '../config/firebase.config';
-import { Property, PropertyFilters, PropertyType, AvailabilityStatus } from '../types/property.types';
+import { Property, PropertyFilters, PropertyType, AvailabilityStatus, PropertyConfiguration } from '../types/property.types';
 import { createNotification } from './notificationService';
 import { NotificationType } from '../types/notification.types';
 import { logActivity } from './activityLogService';
@@ -40,6 +40,7 @@ export interface CreatePropertyData {
   description: string;
   price: number;
   propertyType: PropertyType;
+  configuration?: PropertyConfiguration;
   location: {
     address: string;
     city: string;
@@ -281,7 +282,7 @@ export async function getProperties(filters?: PropertyFilters): Promise<Property
       ...doc.data()
     } as Property));
     
-    // Apply client-side filters for price range and location
+    // Apply client-side filters for price range, location, and configuration
     if (filters) {
       if (filters.priceMin !== undefined) {
         properties = properties.filter(p => p.price >= filters.priceMin!);
@@ -297,6 +298,13 @@ export async function getProperties(filters?: PropertyFilters): Promise<Property
           p.location.address.toLowerCase().includes(locationLower) ||
           p.location.city.toLowerCase().includes(locationLower) ||
           p.location.state.toLowerCase().includes(locationLower)
+        );
+      }
+      
+      // Filter by configuration
+      if (filters.configuration && filters.configuration.length > 0) {
+        properties = properties.filter(p => 
+          p.configuration && filters.configuration!.includes(p.configuration)
         );
       }
     }

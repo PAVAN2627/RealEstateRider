@@ -10,6 +10,22 @@
 import { Timestamp } from 'firebase/firestore';
 
 /**
+ * Property configuration (BHK type)
+ */
+export enum PropertyConfiguration {
+  ONE_RK = '1RK',
+  ONE_BHK = '1BHK',
+  TWO_BHK = '2BHK',
+  THREE_BHK = '3BHK',
+  FOUR_BHK = '4BHK',
+  FIVE_PLUS_BHK = '5+BHK',
+  STUDIO = 'Studio',
+  PENTHOUSE = 'Penthouse',
+  VILLA = 'Villa',
+  NOT_APPLICABLE = 'N/A'
+}
+
+/**
  * Property types available in the platform
  */
 export enum PropertyType {
@@ -55,6 +71,7 @@ export interface Property {
   description: string;
   price: number;
   propertyType: PropertyType;
+  configuration?: PropertyConfiguration;
   location: Location;
   availabilityStatus: AvailabilityStatus;
   verificationStatus: 'pending' | 'approved' | 'rejected';
@@ -77,6 +94,7 @@ export interface PropertyFilters {
   priceMin?: number;
   priceMax?: number;
   propertyType?: PropertyType[];
+  configuration?: PropertyConfiguration[];
   location?: string;
   availabilityStatus?: AvailabilityStatus[];
 }

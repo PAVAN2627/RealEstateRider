@@ -425,10 +425,10 @@ export default function UserApprovalList() {
 
       {/* Aadhar Document Viewer Dialog */}
       <Dialog open={aadharDialogOpen} onOpenChange={setAadharDialogOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh]">
+        <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
-              Aadhar Document - {selectedUser?.profile.name}
+              Identity Verification Document - {selectedUser?.profile.name}
             </DialogTitle>
           </DialogHeader>
           
@@ -437,39 +437,56 @@ export default function UserApprovalList() {
               <>
                 {/* Check if it's a PDF or image based on Base64 data URL prefix */}
                 {selectedUser.aadharDocumentUrl.startsWith('data:application/pdf') ? (
-                  <div className="w-full h-[600px] border rounded">
-                    <iframe
-                      src={selectedUser.aadharDocumentUrl}
-                      className="w-full h-full"
-                      title="Aadhar Document"
-                    />
+                  <div className="border rounded-lg p-8 text-center bg-muted/30">
+                    <FileText className="h-20 w-20 mx-auto mb-4 text-muted-foreground" />
+                    <p className="text-lg font-medium mb-2">PDF Document</p>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      Click below to download and view the document
+                    </p>
+                    <Button
+                      size="lg"
+                      onClick={() => {
+                        const link = document.createElement('a');
+                        link.href = selectedUser.aadharDocumentUrl!;
+                        link.download = `aadhar-${selectedUser.uid}.pdf`;
+                        link.click();
+                      }}
+                    >
+                      Download PDF
+                    </Button>
                   </div>
                 ) : (
-                  <div className="w-full">
+                  <div className="border rounded-lg overflow-hidden bg-black/5">
                     <img
                       src={selectedUser.aadharDocumentUrl}
                       alt="Aadhar Document"
-                      className="w-full h-auto rounded border"
+                      className="w-full h-auto max-h-[70vh] object-contain"
+                      style={{ imageRendering: 'crisp-edges' }}
                     />
                   </div>
                 )}
                 
-                {/* Download Link */}
-                <div className="flex justify-end">
+                {/* Action Buttons */}
+                <div className="flex justify-end gap-2 pt-2">
                   <Button
                     variant="outline"
-                    size="sm"
-                    asChild
+                    onClick={() => setAadharDialogOpen(false)}
                   >
-                    <a
-                      href={selectedUser.aadharDocumentUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      download
-                    >
-                      Download Document
-                    </a>
+                    Close
                   </Button>
+                  {!selectedUser.aadharDocumentUrl.startsWith('data:application/pdf') && (
+                    <Button
+                      onClick={() => {
+                        const link = document.createElement('a');
+                        link.href = selectedUser.aadharDocumentUrl!;
+                        link.download = `aadhar-${selectedUser.uid}.jpg`;
+                        link.target = '_blank';
+                        link.click();
+                      }}
+                    >
+                      Open in New Tab
+                    </Button>
+                  )}
                 </div>
               </>
             )}

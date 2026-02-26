@@ -10,9 +10,9 @@ import { User, Mail, Phone, Calendar, Shield, CheckCircle, Lock, Eye, EyeOff, La
 import { UserRole } from '@/types/user.types';
 import LoadingSpinner from '@/components/shared/LoadingSpinner';
 import { toast } from 'sonner';
-import { updateUserProfile } from '@/services/userService';
 import { updatePassword } from 'firebase/auth';
-import { auth } from '@/config/firebase.config';
+import { auth, db } from '@/config/firebase.config';
+import { doc, getDoc, updateDoc, Timestamp } from 'firebase/firestore';
 
 /**
  * ProfilePage Component
@@ -124,12 +124,21 @@ const ProfilePage = () => {
 
     setIsSaving(true);
     try {
-      // Update profile in Firestore
-      await updateUserProfile(user.uid, {
-        profile: {
-          name: name.trim(),
-          phone: phone.trim() || undefined,
-        },
+      // Get current user document
+      const userRef = doc(db, 'users', user.uid);
+      const userDoc = await getDoc(userRef);
+      
+      if (!userDoc.exists()) {
+        throw new Error('User document not found');
+      }
+      
+      const currentData = userDoc.data();
+      
+      // Update profile in Firestore - merge with existing profile
+      await updateDoc(userRef, {
+        'profile.name': name.trim(),
+        'profile.phone': phone.trim() || '',
+        lastLoginAt: Timestamp.now(),
       });
 
       toast.success('Profile updated successfully!');

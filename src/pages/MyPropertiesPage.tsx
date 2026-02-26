@@ -10,7 +10,7 @@ import PropertyEditModal from '@/components/property/PropertyEditModal';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { PlusCircle, Edit, Trash2, Eye, LayoutDashboard, Home, MessageSquare, Settings } from 'lucide-react';
+import { PlusCircle, Edit, Trash2, Eye, LayoutDashboard, Home, MessageSquare, User } from 'lucide-react';
 import { Property } from '@/types/property.types';
 import * as propertyService from '@/services/propertyService';
 
@@ -122,9 +122,10 @@ const MyPropertiesPage = () => {
         return [
           { to: '/dashboard', label: 'Overview', icon: LayoutDashboard },
           { to: '/properties', label: 'Browse Properties', icon: Home },
+          { to: '/properties/map', label: 'Map View', icon: Home },
           { to: '/wishlist', label: 'Wishlist', icon: Home },
           { to: '/my-inquiries', label: 'My Inquiries', icon: MessageSquare },
-          { to: '/settings', label: 'Settings', icon: Settings },
+          { to: '/profile', label: 'Profile', icon: User },
         ];
       case UserRole.SELLER:
         return [
@@ -132,7 +133,7 @@ const MyPropertiesPage = () => {
           { to: '/my-properties', label: 'My Properties', icon: Home },
           { to: '/properties/new', label: 'Add Property', icon: Home },
           { to: '/received-inquiries', label: 'Inquiries', icon: MessageSquare },
-          { to: '/settings', label: 'Settings', icon: Settings },
+          { to: '/profile', label: 'Profile', icon: User },
         ];
       case UserRole.AGENT:
         return [
@@ -140,8 +141,7 @@ const MyPropertiesPage = () => {
           { to: '/my-properties', label: 'My Properties', icon: Home },
           { to: '/properties/new', label: 'Add Property', icon: Home },
           { to: '/received-inquiries', label: 'Inquiries', icon: MessageSquare },
-          { to: '/agent/profile', label: 'Profile', icon: Settings },
-          { to: '/settings', label: 'Settings', icon: Settings },
+          { to: '/profile', label: 'Profile', icon: User },
         ];
       case UserRole.ADMIN:
         return [

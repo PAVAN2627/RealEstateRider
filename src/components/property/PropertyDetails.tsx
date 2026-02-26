@@ -25,6 +25,7 @@ import { Property } from '../../types/property.types';
 import { User as UserType, AgentProfile } from '../../types/user.types';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Badge } from '../ui/badge';
+import { Button } from '../ui/button';
 import { Separator } from '../ui/separator';
 import PropertyGallery from './PropertyGallery';
 import PropertyMap from './PropertyMap';
@@ -158,6 +159,15 @@ export default function PropertyDetails({
                 <Home className="h-3 w-3 mr-1" />
                 {property.propertyType}
               </Badge>
+              {property.configuration && property.configuration !== 'N/A' && (
+                <Badge variant="secondary">
+                  {property.configuration}
+                </Badge>
+              )}
+              {/* Owner Role Badge */}
+              <Badge variant="outline" className="border-primary/50">
+                {property.ownerRole === 'agent' ? '🏢 Listed by Agent' : '👤 Listed by Seller'}
+              </Badge>
             </div>
             
             <h1 className="text-3xl md:text-4xl font-bold">{property.title}</h1>
@@ -225,6 +235,18 @@ export default function PropertyDetails({
                     <div className="font-medium capitalize">{property.propertyType}</div>
                   </div>
                 </div>
+
+                {property.configuration && property.configuration !== 'N/A' && (
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-primary/10 rounded-lg">
+                      <Ruler className="h-5 w-5 text-primary" />
+                    </div>
+                    <div>
+                      <div className="text-sm text-muted-foreground">Configuration</div>
+                      <div className="font-medium">{property.configuration}</div>
+                    </div>
+                  </div>
+                )}
 
                 <div className="flex items-center gap-3">
                   <div className="p-2 bg-primary/10 rounded-lg">

@@ -133,9 +133,13 @@ export default function PropertyCard({
           </div>
 
           {/* Badges */}
-          <div className="absolute top-2 left-2 flex gap-2">
+          <div className="absolute top-2 left-2 flex gap-2 flex-wrap">
             {getVerificationBadge()}
             {getAvailabilityBadge()}
+            {/* Owner Role Badge */}
+            <Badge variant="outline" className="bg-white/90 backdrop-blur-sm">
+              {property.ownerRole === 'agent' ? '🏢 Agent' : '👤 Seller'}
+            </Badge>
           </div>
 
           {/* Wishlist Button */}
@@ -151,10 +155,18 @@ export default function PropertyCard({
         </div>
 
         <CardContent className="p-4" onClick={handleCardClick}>
-          {/* Property Type */}
+          {/* Property Type and Configuration */}
           <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
             <Home className="h-4 w-4" />
             <span className="capitalize">{property.propertyType}</span>
+            {property.configuration && property.configuration !== 'N/A' && (
+              <>
+                <span>•</span>
+                <Badge variant="secondary" className="text-xs">
+                  {property.configuration}
+                </Badge>
+              </>
+            )}
           </div>
 
           {/* Title */}

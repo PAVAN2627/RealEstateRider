@@ -24,7 +24,7 @@ import {
 import ImageUpload from '../shared/ImageUpload';
 import ErrorMessage from '../shared/ErrorMessage';
 import { useAuth } from '../../context/AuthContext';
-import { Property, PropertyType, AvailabilityStatus } from '../../types/property.types';
+import { Property, PropertyType, AvailabilityStatus, PropertyConfiguration } from '../../types/property.types';
 import { createProperty, updateProperty } from '../../services/propertyService';
 import { uploadPropertyImage } from '../../services/storageService';
 
@@ -45,6 +45,7 @@ interface FormData {
   description: string;
   price: string;
   propertyType: PropertyType | '';
+  configuration: PropertyConfiguration | '';
   address: string;
   city: string;
   state: string;
@@ -98,6 +99,7 @@ export default function PropertyForm({ property, onSuccess, onCancel }: Property
     description: property?.description || '',
     price: property?.price?.toString() || '',
     propertyType: property?.propertyType || '',
+    configuration: property?.configuration || '',
     address: property?.location.address || '',
     city: property?.location.city || '',
     state: property?.location.state || '',
@@ -366,20 +368,23 @@ export default function PropertyForm({ property, onSuccess, onCancel }: Property
 
       if (isEditMode && property) {
         // Update existing property
-        await updateProperty(
-          property.id,
-          {
-            title: formData.title.trim(),
-            description: formData.description.trim(),
-            price: parseFloat(formData.price),
-            propertyType: formData.propertyType as PropertyType,
-            location,
-            availabilityStatus: formData.availabilityStatus,
-            imageUrls: allImageUrls,
-            ownershipDocumentUrls,
-          },
-          user.uid
-        );
+        const updateData: any = {
+          title: formData.title.trim(),
+          description: formData.description.trim(),
+          price: parseFloat(formData.price),
+          propertyType: formData.propertyType as PropertyType,
+          location,
+          availabilityStatus: formData.availabilityStatus,
+          imageUrls: allImageUrls,
+          ownershipDocumentUrls,
+        };
+        
+        // Add configuration if selected
+        if (formData.configuration) {
+          updateData.configuration = formData.configuration as PropertyConfiguration;
+        }
+        
+        await updateProperty(property.id, updateData, user.uid);
       } else {
         // Create new property with images and documents
         const propertyData: any = {
@@ -394,6 +399,11 @@ export default function PropertyForm({ property, onSuccess, onCancel }: Property
           ownerId: user.uid,
           ownerRole: user.role === 'agent' ? 'agent' : 'seller',
         };
+        
+        // Add configuration if selected
+        if (formData.configuration) {
+          propertyData.configuration = formData.configuration as PropertyConfiguration;
+        }
 
         // Only add agentId if user is an agent
         if (user.role === 'agent') {
@@ -539,6 +549,37 @@ export default function PropertyForm({ property, onSuccess, onCancel }: Property
               <p className="text-sm text-red-500">{errors.propertyType}</p>
             )}
           </div>
+        </div>
+
+        {/* Configuration (BHK Type) */}
+        <div className="space-y-2">
+          <Label htmlFor="configuration">
+            Property Configuration (Optional)
+          </Label>
+          <Select
+            value={formData.configuration}
+            onValueChange={(value) => handleSelectChange('configuration', value)}
+            disabled={submitting}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select configuration (e.g., 1BHK, 2BHK)" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={PropertyConfiguration.ONE_RK}>1RK</SelectItem>
+              <SelectItem value={PropertyConfiguration.ONE_BHK}>1BHK</SelectItem>
+              <SelectItem value={PropertyConfiguration.TWO_BHK}>2BHK</SelectItem>
+              <SelectItem value={PropertyConfiguration.THREE_BHK}>3BHK</SelectItem>
+              <SelectItem value={PropertyConfiguration.FOUR_BHK}>4BHK</SelectItem>
+              <SelectItem value={PropertyConfiguration.FIVE_PLUS_BHK}>5+BHK</SelectItem>
+              <SelectItem value={PropertyConfiguration.STUDIO}>Studio</SelectItem>
+              <SelectItem value={PropertyConfiguration.PENTHOUSE}>Penthouse</SelectItem>
+              <SelectItem value={PropertyConfiguration.VILLA}>Villa</SelectItem>
+              <SelectItem value={PropertyConfiguration.NOT_APPLICABLE}>N/A</SelectItem>
+            </SelectContent>
+          </Select>
+          <p className="text-sm text-muted-foreground">
+            Select the property configuration (e.g., 1BHK, 2BHK) if applicable
+          </p>
         </div>
 
         {/* Availability Status */}

@@ -7,9 +7,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { 
   LayoutDashboard, 
-  Home, 
-  MessageSquare, 
-  Settings, 
+  UserCheck,
+  CheckSquare,
+  Users,
+  Building2,
+  Activity,
+  Home,
   Search,
   Eye,
   CheckCircle,
@@ -55,13 +58,12 @@ const AllPropertiesPage = () => {
 
   const getSidebarLinks = () => {
     return [
-      { to: '/dashboard', label: 'Overview', icon: LayoutDashboard },
-      { to: '/admin/users', label: 'Manage Users', icon: Home },
-      { to: '/admin/properties', label: 'All Properties', icon: Home },
-      { to: '/admin/approvals/users', label: 'User Approvals', icon: MessageSquare },
-      { to: '/admin/approvals/properties', label: 'Property Approvals', icon: Home },
-      { to: '/admin/activity', label: 'Activity Logs', icon: MessageSquare },
-      { to: '/profile', label: 'Profile', icon: Settings },
+      { to: '/admin', label: 'Dashboard', icon: LayoutDashboard },
+      { to: '/admin/approvals/users', label: 'User Approvals', icon: UserCheck },
+      { to: '/admin/approvals/properties', label: 'Property Approvals', icon: CheckSquare },
+      { to: '/admin/users', label: 'Manage Users', icon: Users },
+      { to: '/admin/properties', label: 'All Properties', icon: Building2 },
+      { to: '/admin/activity', label: 'Activity Logs', icon: Activity },
     ];
   };
 

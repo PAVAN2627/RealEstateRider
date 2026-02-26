@@ -4,7 +4,7 @@ import { UserRole } from '@/types/user.types';
 import DashboardLayout from '@/components/DashboardLayout';
 import PropertyForm from '@/components/property/PropertyForm';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, LayoutDashboard, Home, MessageSquare, Settings } from 'lucide-react';
+import { ArrowLeft, LayoutDashboard, Home, MessageSquare, User } from 'lucide-react';
 import { CreatePropertyData } from '@/types/property.types';
 import * as propertyService from '@/services/propertyService';
 import { toast } from 'sonner';
@@ -62,8 +62,7 @@ const CreatePropertyPage = () => {
           { to: '/my-properties', label: 'My Properties', icon: Home },
           { to: '/properties/new', label: 'Add Property', icon: Home },
           { to: '/received-inquiries', label: 'Inquiries', icon: MessageSquare },
-          { to: '/agent/profile', label: 'Profile', icon: Settings },
-          { to: '/settings', label: 'Settings', icon: Settings },
+          { to: '/profile', label: 'Profile', icon: User },
         ];
       case UserRole.ADMIN:
         return [

@@ -202,7 +202,7 @@ const BuyerDashboard = () => {
               </Button>
             </div>
           ) : (
-            <div className="space-y-4">
+            <div className="max-h-[400px] overflow-y-auto space-y-4">
               {recentActivity.map((activity) => (
                 <div
                   key={activity.id}

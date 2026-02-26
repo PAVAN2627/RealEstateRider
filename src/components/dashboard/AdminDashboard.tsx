@@ -241,7 +241,7 @@ const AdminDashboard = () => {
               <p className="text-sm mt-1">Platform activity will appear here</p>
             </div>
           ) : (
-            <div className="space-y-4">
+            <div className="max-h-[400px] overflow-y-auto space-y-4">
               {recentActivity.map((log) => (
                 <div
                   key={log.id}

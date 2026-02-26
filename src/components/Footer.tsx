@@ -29,7 +29,7 @@ const Footer = () => {
               </div>
               <div className="flex items-center gap-2">
                 <MapPin className="w-4 h-4" />
-                <span>Mumbai, Maharashtra, India</span>
+                <span>Pune, Maharashtra, India</span>
               </div>
             </div>
             <div className="flex gap-3 mt-4">
@@ -52,10 +52,9 @@ const Footer = () => {
             {
               title: "Quick Links",
               links: [
-                { label: "Browse Properties", to: "/properties" },
+                { label: "Home", to: "/" },
                 { label: "About Us", to: "/about" },
                 { label: "Contact Us", to: "/contact" },
-                { label: "FAQs", to: "/faqs" },
               ],
             },
             {
@@ -73,7 +72,6 @@ const Footer = () => {
                 { label: "Privacy Policy", to: "/privacy-policy" },
                 { label: "Terms of Service", to: "/terms-of-service" },
                 { label: "Cookie Policy", to: "/cookie-policy" },
-                { label: "Refund Policy", to: "/refund-policy" },
               ],
             },
           ].map((section) => (

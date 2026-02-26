@@ -20,7 +20,7 @@ interface AuthContextValue {
   user: User | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string, role: UserRole, name?: string) => Promise<string | undefined>;
+  register: (email: string, password: string, role: UserRole, name?: string, phone?: string) => Promise<string | undefined>;
   logout: () => Promise<void>;
   isAuthenticated: boolean;
   hasRole: (roles: UserRole[]) => boolean;
@@ -108,11 +108,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   /**
    * Register function
-   * Creates new user account with email, password, and role
+   * Creates new user account with email, password, role, name, and phone
    * 
    * @param email - User email address
    * @param password - User password
    * @param role - User role (buyer, seller, agent, admin)
+   * @param name - User's full name
+   * @param phone - User's phone number
    * @throws Error if registration fails
    * 
    * Requirement 1.1: User registration with role selection and pending verification
@@ -121,11 +123,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
     email: string,
     password: string,
     role: UserRole,
-    name?: string
+    name?: string,
+    phone?: string
   ): Promise<string | undefined> => {
     setLoading(true);
     try {
-      const userData = await authService.register(email, password, role, name);
+      const userData = await authService.register(email, password, role, name, phone);
       setUser(userData);
       return userData.uid;
     } catch (error) {

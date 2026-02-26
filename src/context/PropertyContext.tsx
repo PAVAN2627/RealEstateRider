@@ -20,7 +20,7 @@ interface PropertyContextValue {
   error: string | null;
   filters: PropertyFilters;
   setFilters: (filters: PropertyFilters) => void;
-  refreshProperties: () => Promise<void>;
+  refreshProperties: (filtersToApply?: PropertyFilters) => Promise<void>;
 }
 
 /**
@@ -58,6 +58,7 @@ export function PropertyProvider({ children }: PropertyProviderProps) {
    * Fetches properties from the database applying current filter criteria.
    * Updates loading and error states during the operation.
    * 
+   * @param filtersToApply - Optional filters to apply (uses current filters if not provided)
    * @throws Error if property retrieval fails
    * 
    * Requirements:
@@ -65,12 +66,16 @@ export function PropertyProvider({ children }: PropertyProviderProps) {
    * - 6.2: Filter properties within 2 seconds
    * - 6.7: Apply multiple filter conditions
    */
-  const refreshProperties = useCallback(async () => {
+  const refreshProperties = useCallback(async (filtersToApply?: PropertyFilters) => {
     setLoading(true);
     setError(null);
     
     try {
-      const fetchedProperties = await propertyService.getProperties(filters);
+      // Use provided filters or current filters
+      const activeFilters = filtersToApply !== undefined ? filtersToApply : filters;
+      console.log('Fetching properties with filters:', activeFilters); // Debug log
+      const fetchedProperties = await propertyService.getProperties(activeFilters);
+      console.log('Fetched properties count:', fetchedProperties.length); // Debug log
       setProperties(fetchedProperties);
     } catch (err) {
       console.error('Error fetching properties:', err);
@@ -85,8 +90,7 @@ export function PropertyProvider({ children }: PropertyProviderProps) {
   /**
    * Set filters and trigger property refresh
    * 
-   * Updates the filter state with new filter criteria.
-   * Does not automatically refresh - caller should call refreshProperties.
+   * Updates the filter state with new filter criteria and immediately refreshes properties.
    * 
    * @param newFilters - New filter criteria to apply
    * 
@@ -94,8 +98,11 @@ export function PropertyProvider({ children }: PropertyProviderProps) {
    * - 6.7: Support multiple simultaneous filters
    */
   const setFilters = useCallback((newFilters: PropertyFilters) => {
+    console.log('Setting new filters:', newFilters); // Debug log
     setFiltersState(newFilters);
-  }, []);
+    // Immediately refresh with the new filters
+    refreshProperties(newFilters);
+  }, [refreshProperties]);
 
   const value: PropertyContextValue = {
     properties,

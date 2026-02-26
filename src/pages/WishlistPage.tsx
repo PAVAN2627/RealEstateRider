@@ -46,8 +46,7 @@ const WishlistPage = () => {
           { to: '/my-properties', label: 'My Properties', icon: Home },
           { to: '/properties/new', label: 'Add Property', icon: Home },
           { to: '/received-inquiries', label: 'Inquiries', icon: MessageSquare },
-          { to: '/agent/profile', label: 'Profile', icon: Settings },
-          { to: '/settings', label: 'Settings', icon: Settings },
+          { to: '/profile', label: 'Profile', icon: User },
         ];
       case UserRole.ADMIN:
         return [

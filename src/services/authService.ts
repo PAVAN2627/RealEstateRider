@@ -20,13 +20,14 @@ import { User, UserRole, VerificationStatus } from '../types/user.types';
 import { logActivity } from './activityLogService';
 
 /**
- * Register a new user with email, password, role, and name
+ * Register a new user with email, password, role, name, and phone
  * Creates Firebase Auth account and user document in Firestore
  * 
  * @param email - User email address
  * @param password - User password
  * @param role - User role (buyer, seller, agent, admin)
  * @param name - User's full name
+ * @param phone - User's phone number
  * @returns Promise<User> - Created user object
  * @throws Error if registration fails
  * 
@@ -36,16 +37,17 @@ export async function register(
   email: string,
   password: string,
   role: UserRole,
-  name: string = ''
+  name: string = '',
+  phone: string = ''
 ): Promise<User> {
   try {
     // Create Firebase Auth account
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
     const firebaseUser = userCredential.user;
 
-    // Auto-approve Buyers and Sellers, Agents need admin approval
+    // Auto-approve Buyers, Sellers, and Admins. Agents need admin approval
     const verificationStatus = 
-      role === UserRole.BUYER || role === UserRole.SELLER
+      role === UserRole.BUYER || role === UserRole.SELLER || role === UserRole.ADMIN
         ? VerificationStatus.APPROVED
         : VerificationStatus.PENDING;
 
@@ -57,7 +59,8 @@ export async function register(
       verificationStatus,
       createdAt: Timestamp.now(),
       profile: {
-        name: name.trim() || email.split('@')[0] // Use name or fallback to email username
+        name: name.trim() || email.split('@')[0], // Use name or fallback to email username
+        phone: phone.trim() || undefined
       }
     };
 

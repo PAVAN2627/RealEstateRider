@@ -38,10 +38,10 @@ const PropertiesPage = () => {
     const value = e.target.value;
     setSearchQuery(value);
     // Update location filter based on search
+    // setFilters now automatically refreshes properties
     setFilters({
       location: value,
     });
-    refreshProperties();
   };
 
   // Sidebar links based on user role - same as DashboardPage
@@ -72,8 +72,7 @@ const PropertiesPage = () => {
           { to: '/my-properties', label: 'My Properties', icon: Home },
           { to: '/properties/new', label: 'Add Property', icon: Home },
           { to: '/received-inquiries', label: 'Inquiries', icon: MessageSquare },
-          { to: '/agent/profile', label: 'Profile', icon: Settings },
-          { to: '/settings', label: 'Settings', icon: Settings },
+          { to: '/profile', label: 'Profile', icon: User },
         ];
       case UserRole.ADMIN:
         return [
@@ -113,18 +112,12 @@ const PropertiesPage = () => {
       </div>
 
       {/* Main Content */}
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        {/* Filters Sidebar */}
-        <div className="lg:col-span-1">
-          <div className="sticky top-4">
-            <PropertyFilters />
-          </div>
-        </div>
+      <div className="space-y-6">
+        {/* Filters - Horizontal */}
+        <PropertyFilters />
 
         {/* Property List */}
-        <div className="lg:col-span-3">
-          <PropertyList showOnlyApproved={true} />
-        </div>
+        <PropertyList showOnlyApproved={true} />
       </div>
     </DashboardLayout>
   );

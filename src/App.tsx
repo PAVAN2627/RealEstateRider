@@ -22,6 +22,8 @@ import PrivacyPolicyPage from "./pages/PrivacyPolicyPage";
 import TermsOfServicePage from "./pages/TermsOfServicePage";
 import CookiePolicyPage from "./pages/CookiePolicyPage";
 import RefundPolicyPage from "./pages/RefundPolicyPage";
+import AboutPage from "./pages/AboutPage";
+import ContactPage from "./pages/ContactPage";
 
 // Protected Pages - Lazy loaded for code splitting
 // Requirement 22.1: Implement code splitting for page components
@@ -78,6 +80,10 @@ const App = () => (
                   <Route path="/terms-of-service" element={<TermsOfServicePage />} />
                   <Route path="/cookie-policy" element={<CookiePolicyPage />} />
                   <Route path="/refund-policy" element={<RefundPolicyPage />} />
+                  
+                  {/* Info Pages */}
+                  <Route path="/about" element={<AboutPage />} />
+                  <Route path="/contact" element={<ContactPage />} />
 
                   {/* Protected Routes - Buyer Only */}
                   <Route

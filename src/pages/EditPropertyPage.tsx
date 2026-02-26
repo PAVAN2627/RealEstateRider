@@ -7,7 +7,7 @@ import PropertyForm from '@/components/property/PropertyForm';
 import LoadingSpinner from '@/components/shared/LoadingSpinner';
 import ErrorMessage from '@/components/shared/ErrorMessage';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, LayoutDashboard, Home, MessageSquare, Settings } from 'lucide-react';
+import { ArrowLeft, LayoutDashboard, Home, MessageSquare, User } from 'lucide-react';
 import { Property } from '@/types/property.types';
 import * as propertyService from '@/services/propertyService';
 import { toast } from 'sonner';
@@ -94,8 +94,7 @@ const EditPropertyPage = () => {
           { to: '/my-properties', label: 'My Properties', icon: Home },
           { to: '/properties/new', label: 'Add Property', icon: Home },
           { to: '/received-inquiries', label: 'Inquiries', icon: MessageSquare },
-          { to: '/agent/profile', label: 'Profile', icon: Settings },
-          { to: '/settings', label: 'Settings', icon: Settings },
+          { to: '/profile', label: 'Profile', icon: User },
         ];
       case UserRole.ADMIN:
         return [

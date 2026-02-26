@@ -5,7 +5,7 @@ import DashboardLayout from '@/components/DashboardLayout';
 import WhatsAppChatInterface from '@/components/inquiry/WhatsAppChatInterface';
 import LoadingSpinner from '@/components/shared/LoadingSpinner';
 import ErrorMessage from '@/components/shared/ErrorMessage';
-import { LayoutDashboard, Home, Heart, MessageSquare, Settings } from 'lucide-react';
+import { LayoutDashboard, Home, Heart, MessageSquare, User } from 'lucide-react';
 import { getInquiriesByAgent } from '@/services/inquiryService';
 import { getProperty } from '@/services/propertyService';
 import { Inquiry } from '@/types/inquiry.types';
@@ -97,8 +97,7 @@ const ReceivedInquiriesPage = () => {
           { to: '/my-properties', label: 'My Properties', icon: Home },
           { to: '/properties/new', label: 'Add Property', icon: Home },
           { to: '/received-inquiries', label: 'Inquiries', icon: MessageSquare },
-          { to: '/agent/profile', label: 'Profile', icon: Settings },
-          { to: '/settings', label: 'Settings', icon: Settings },
+          { to: '/profile', label: 'Profile', icon: User },
         ];
       case UserRole.ADMIN:
         return [

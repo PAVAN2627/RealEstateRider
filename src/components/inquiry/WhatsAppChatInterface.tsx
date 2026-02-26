@@ -9,7 +9,8 @@ import { sendMessage } from '@/services/inquiryService';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Send, Search, MoreVertical, MessageSquare } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Send, Search, MoreVertical, MessageSquare, User, Mail, Phone } from 'lucide-react';
 import LoadingSpinner from '@/components/shared/LoadingSpinner';
 import PropertyDetailsModal from '@/components/property/PropertyDetailsModal';
 import { Timestamp } from 'firebase/firestore';
@@ -46,6 +47,7 @@ export default function WhatsAppChatInterface({
   const [userProfiles, setUserProfiles] = useState<Map<string, UserType>>(new Map());
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
   const [showPropertyModal, setShowPropertyModal] = useState(false);
+  const [showUserDetailsModal, setShowUserDetailsModal] = useState(false);
 
   const isBuyer = user?.role === 'buyer';
 
@@ -286,7 +288,12 @@ export default function WhatsAppChatInterface({
                   </AvatarFallback>
                 </Avatar>
                 <div>
-                  <h3 className="font-semibold">{selectedChat.name}</h3>
+                  <h3 
+                    className="font-semibold cursor-pointer hover:text-primary transition-colors"
+                    onClick={() => setShowUserDetailsModal(true)}
+                  >
+                    {selectedChat.name}
+                  </h3>
                   {selectedChat.property && (
                     <p className="text-xs text-muted-foreground">
                       {selectedChat.property.title}
@@ -459,6 +466,67 @@ export default function WhatsAppChatInterface({
             setSelectedProperty(null);
           }}
         />
+      )}
+
+      {/* User Details Modal */}
+      {selectedChat && (
+        <Dialog open={showUserDetailsModal} onOpenChange={setShowUserDetailsModal}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Contact Details</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-6 py-4">
+              {/* Avatar and Name */}
+              <div className="flex flex-col items-center gap-3">
+                <Avatar className="w-20 h-20">
+                  <AvatarFallback className="bg-primary text-primary-foreground text-2xl">
+                    {selectedChat.name.charAt(0).toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+                <h3 className="text-xl font-semibold">{selectedChat.name}</h3>
+                <p className="text-sm text-muted-foreground capitalize">
+                  {userProfiles.get(selectedChat.id)?.role || 'User'}
+                </p>
+              </div>
+
+              {/* Contact Information */}
+              <div className="space-y-4">
+                {/* Name */}
+                <div className="flex items-start gap-3 p-3 bg-muted/50 rounded-lg">
+                  <User className="w-5 h-5 text-muted-foreground mt-0.5" />
+                  <div className="flex-1">
+                    <p className="text-xs text-muted-foreground mb-1">Full Name</p>
+                    <p className="text-sm font-medium">
+                      {userProfiles.get(selectedChat.id)?.profile?.name || selectedChat.name}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Email */}
+                <div className="flex items-start gap-3 p-3 bg-muted/50 rounded-lg">
+                  <Mail className="w-5 h-5 text-muted-foreground mt-0.5" />
+                  <div className="flex-1">
+                    <p className="text-xs text-muted-foreground mb-1">Email Address</p>
+                    <p className="text-sm font-medium break-all">
+                      {userProfiles.get(selectedChat.id)?.email || 'Not provided'}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Phone */}
+                <div className="flex items-start gap-3 p-3 bg-muted/50 rounded-lg">
+                  <Phone className="w-5 h-5 text-muted-foreground mt-0.5" />
+                  <div className="flex-1">
+                    <p className="text-xs text-muted-foreground mb-1">Phone Number</p>
+                    <p className="text-sm font-medium">
+                      {userProfiles.get(selectedChat.id)?.profile?.phone || 'Not provided'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       )}
     </div>
   );

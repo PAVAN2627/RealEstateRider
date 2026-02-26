@@ -3,7 +3,7 @@ import { BuyerDashboard, SellerDashboard, AgentDashboard, AdminDashboard } from 
 import LoadingSpinner from '@/components/shared/LoadingSpinner';
 import { UserRole } from '@/types/user.types';
 import DashboardLayout from '@/components/DashboardLayout';
-import { LayoutDashboard, Home, Heart, MessageSquare, User, Map } from 'lucide-react';
+import { LayoutDashboard, Home, Heart, MessageSquare, User, Map, Settings, UserCheck, CheckSquare, Users, Building2, Activity } from 'lucide-react';
 
 /**
  * DashboardPage Component
@@ -57,17 +57,16 @@ const DashboardPage = () => {
           { to: '/my-properties', label: 'My Properties', icon: Home },
           { to: '/properties/new', label: 'Add Property', icon: Home },
           { to: '/received-inquiries', label: 'Inquiries', icon: MessageSquare },
-          { to: '/profile', label: 'Profile', icon: Settings },
+          { to: '/profile', label: 'Profile', icon: User },
         ];
       case UserRole.ADMIN:
         return [
-          { to: '/dashboard', label: 'Overview', icon: LayoutDashboard },
-          { to: '/admin/users', label: 'Manage Users', icon: Home },
-          { to: '/admin/properties', label: 'All Properties', icon: Home },
-          { to: '/admin/approvals/users', label: 'User Approvals', icon: MessageSquare },
-          { to: '/admin/approvals/properties', label: 'Property Approvals', icon: Home },
-          { to: '/admin/activity', label: 'Activity Logs', icon: MessageSquare },
-          { to: '/profile', label: 'Profile', icon: Settings },
+          { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+          { to: '/admin/approvals/users', label: 'User Approvals', icon: UserCheck },
+          { to: '/admin/approvals/properties', label: 'Property Approvals', icon: CheckSquare },
+          { to: '/admin/users', label: 'Manage Users', icon: Users },
+          { to: '/admin/properties', label: 'All Properties', icon: Building2 },
+          { to: '/admin/activity', label: 'Activity Logs', icon: Activity },
         ];
       default:
         return [];

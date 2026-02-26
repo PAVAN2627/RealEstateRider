@@ -36,7 +36,7 @@ const DashboardLayout = ({ children, links, title }: DashboardLayoutProps) => {
   return (
     <div className="min-h-screen bg-background flex">
       {/* Desktop Sidebar */}
-      <aside className="hidden lg:flex w-64 flex-col bg-card border-r border-border">
+      <aside className="hidden lg:flex w-64 flex-col bg-card border-r border-border h-screen sticky top-0">
         <div className="p-6">
           <Link to="/" className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-lg gradient-primary flex items-center justify-center">
@@ -54,7 +54,7 @@ const DashboardLayout = ({ children, links, title }: DashboardLayoutProps) => {
           </span>
         </div>
 
-        <nav className="flex-1 px-3 space-y-1">
+        <nav className="flex-1 px-3 space-y-1 overflow-y-auto">
           {links.map((link) => (
             <Link
               key={link.to}
@@ -71,7 +71,7 @@ const DashboardLayout = ({ children, links, title }: DashboardLayoutProps) => {
           ))}
         </nav>
 
-        <div className="p-3 mb-3">
+        <div className="p-3 mb-3 mt-auto">
           <Button
             onClick={handleLogout}
             variant="outline"
@@ -93,7 +93,7 @@ const DashboardLayout = ({ children, links, title }: DashboardLayoutProps) => {
 
       {/* Mobile Sidebar */}
       <aside
-        className={`fixed top-0 left-0 h-full w-64 bg-card border-r border-border z-50 transform transition-transform duration-300 ease-in-out lg:hidden ${
+        className={`fixed top-0 left-0 h-full w-64 bg-card border-r border-border z-50 transform transition-transform duration-300 ease-in-out lg:hidden flex flex-col ${
           isMobileMenuOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
@@ -122,7 +122,7 @@ const DashboardLayout = ({ children, links, title }: DashboardLayoutProps) => {
           </span>
         </div>
 
-        <nav className="flex-1 px-3 space-y-1">
+        <nav className="flex-1 px-3 space-y-1 overflow-y-auto">
           {links.map((link) => (
             <Link
               key={link.to}
@@ -140,7 +140,7 @@ const DashboardLayout = ({ children, links, title }: DashboardLayoutProps) => {
           ))}
         </nav>
 
-        <div className="p-3 mb-3">
+        <div className="p-3 mb-3 mt-auto">
           <Button
             onClick={handleLogout}
             variant="outline"

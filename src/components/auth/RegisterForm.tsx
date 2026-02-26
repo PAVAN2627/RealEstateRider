@@ -27,9 +27,11 @@ export default function RegisterForm() {
   
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [role, setRole] = useState<UserRole | ''>('');
+  const [adminSecretKey, setAdminSecretKey] = useState('');
   const [aadharDocument, setAadharDocument] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -50,6 +52,12 @@ export default function RegisterForm() {
       errors.email = 'Invalid email format';
     }
 
+    if (!phone || phone.trim().length === 0) {
+      errors.phone = 'Phone number is required';
+    } else if (!/^[0-9]{10}$/.test(phone.trim())) {
+      errors.phone = 'Phone number must be 10 digits';
+    }
+
     if (!password) {
       errors.password = 'Password is required';
     } else if (password.length < 6) {
@@ -66,9 +74,18 @@ export default function RegisterForm() {
       errors.role = 'Please select a role';
     }
 
-    // Validate Aadhar document for agents
-    if (role === UserRole.AGENT && !aadharDocument) {
-      errors.aadharDocument = 'Aadhar document is required for agents';
+    // Validate admin secret key if role is admin
+    if (role === UserRole.ADMIN) {
+      if (!adminSecretKey || adminSecretKey.trim().length === 0) {
+        errors.adminSecretKey = 'Admin secret key is required';
+      } else if (adminSecretKey !== import.meta.env.VITE_ADMIN_SECRET_KEY) {
+        errors.adminSecretKey = 'Invalid admin secret key';
+      }
+    }
+
+    // Validate Aadhar document for non-admin users
+    if (role !== UserRole.ADMIN && !aadharDocument) {
+      errors.aadharDocument = 'Aadhar document is required for verification';
     }
 
     setFieldErrors(errors);
@@ -85,15 +102,19 @@ export default function RegisterForm() {
 
     try {
       // Register user first
-      const userId = await register(email, password, role as UserRole, name.trim());
+      const userId = await register(email, password, role as UserRole, name.trim(), phone.trim());
       
-      // If agent, upload Aadhar document
-      if (role === UserRole.AGENT && aadharDocument && userId) {
+      // Upload Aadhar document for non-admin users
+      if (role !== UserRole.ADMIN && aadharDocument && userId) {
         await uploadAadharDocument(aadharDocument, userId);
       }
       
-      // Redirect to pending approval page for agents, login for others
-      if (role === UserRole.AGENT) {
+      // Redirect based on role
+      if (role === UserRole.ADMIN) {
+        // Admin goes directly to dashboard
+        navigate('/dashboard');
+      } else if (role === UserRole.AGENT) {
+        // Agents need approval, redirect to pending approval page
         navigate('/pending-approval');
       } else {
         // Buyers and Sellers are auto-approved, go to login
@@ -154,6 +175,29 @@ export default function RegisterForm() {
           </div>
 
           <div className="space-y-2">
+            <Label htmlFor="phone">Phone Number</Label>
+            <Input
+              id="phone"
+              name="phone"
+              type="tel"
+              autoComplete="tel"
+              placeholder="9876543210"
+              value={phone}
+              onChange={(e) => {
+                // Only allow numbers
+                const value = e.target.value.replace(/\D/g, '');
+                setPhone(value);
+                setFieldErrors(prev => ({ ...prev, phone: undefined }));
+              }}
+              maxLength={10}
+              className={fieldErrors.phone ? 'border-red-500' : ''}
+              disabled={loading}
+            />
+            {fieldErrors.phone && <p className="text-sm text-red-500">{fieldErrors.phone}</p>}
+            <p className="text-xs text-muted-foreground">Enter 10-digit mobile number</p>
+          </div>
+
+          <div className="space-y-2">
             <Label htmlFor="password">Password</Label>
             <Input
               id="password"
@@ -204,13 +248,43 @@ export default function RegisterForm() {
                 <SelectItem value={UserRole.BUYER}>Buyer</SelectItem>
                 <SelectItem value={UserRole.SELLER}>Seller</SelectItem>
                 <SelectItem value={UserRole.AGENT}>Be an Agent</SelectItem>
+                <SelectItem value={UserRole.ADMIN}>Admin</SelectItem>
               </SelectContent>
             </Select>
             {fieldErrors.role && <p className="text-sm text-red-500">{fieldErrors.role}</p>}
           </div>
 
-          {/* Aadhar Document Upload for Agents */}
-          {role === UserRole.AGENT && (
+          {/* Admin Secret Key - Only shown when Admin role is selected */}
+          {role === UserRole.ADMIN && (
+            <div className="space-y-2">
+              <Label htmlFor="adminSecretKey">
+                Admin Secret Key <span className="text-red-500">*</span>
+              </Label>
+              <Input
+                id="adminSecretKey"
+                name="adminSecretKey"
+                type="password"
+                autoComplete="off"
+                placeholder="Enter admin secret key"
+                value={adminSecretKey}
+                onChange={(e) => {
+                  setAdminSecretKey(e.target.value);
+                  setFieldErrors(prev => ({ ...prev, adminSecretKey: undefined }));
+                }}
+                className={fieldErrors.adminSecretKey ? 'border-red-500' : ''}
+                disabled={loading}
+              />
+              {fieldErrors.adminSecretKey && (
+                <p className="text-sm text-red-500">{fieldErrors.adminSecretKey}</p>
+              )}
+              <p className="text-xs text-muted-foreground">
+                Contact system administrator for the admin secret key
+              </p>
+            </div>
+          )}
+
+          {/* Aadhar Document Upload - Only for non-admin users */}
+          {role !== UserRole.ADMIN && (
             <div className="space-y-2">
               <Label htmlFor="aadharDocument">
                 Aadhar Document <span className="text-red-500">*</span>
@@ -244,7 +318,7 @@ export default function RegisterForm() {
                 <p className="text-sm text-red-500">{fieldErrors.aadharDocument}</p>
               )}
               <p className="text-xs text-muted-foreground">
-                Upload your Aadhar card (PDF, JPG, or PNG, max 500KB)
+                Upload your Aadhar card for verification (PDF, JPG, or PNG, max 500KB)
               </p>
             </div>
           )}
