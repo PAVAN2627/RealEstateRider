@@ -37,8 +37,8 @@ export async function register(
   email: string,
   password: string,
   role: UserRole,
-  name: string = '',
-  phone: string = ''
+  name: string,
+  phone: string
 ): Promise<User> {
   try {
     // Create Firebase Auth account
@@ -60,7 +60,7 @@ export async function register(
       createdAt: Timestamp.now(),
       profile: {
         name: name.trim() || email.split('@')[0], // Use name or fallback to email username
-        phone: phone.trim() || undefined
+        phone: phone.trim()
       }
     };
 

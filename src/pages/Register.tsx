@@ -80,6 +80,18 @@ const Register = () => {
       return;
     }
 
+    // Validate phone for non-admin users
+    if (role !== "admin") {
+      if (!phone || phone.trim().length === 0) {
+        toast.error("Phone number is required");
+        return;
+      }
+      if (!/^[0-9]{10}$/.test(phone.trim())) {
+        toast.error("Phone number must be 10 digits");
+        return;
+      }
+    }
+
     if (password.length < 8) {
       toast.error("Password must be at least 8 characters long");
       return;
@@ -107,7 +119,7 @@ const Register = () => {
     try {
       const userRole = mapToUserRole(role);
       const fullName = role === "admin" ? "Admin" : `${firstName} ${lastName}`.trim();
-      const userPhone = role === "admin" ? "" : phone;
+      const userPhone = role === "admin" ? "0000000000" : phone; // Default phone for admin
       const userId = await register(email, password, userRole, fullName, userPhone);
       
       // Upload Aadhar document only for Sellers and Agents

@@ -102,7 +102,7 @@ async function createAdminUser() {
       createdAt: Timestamp.now(),
       profile: {
         name: name,
-        phone: '',
+        phone: '0000000000', // Default phone for admin
       },
     };
 
