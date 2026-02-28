@@ -117,8 +117,8 @@ export default function RegisterForm() {
         // Agents need approval, redirect to pending approval page
         navigate('/pending-approval');
       } else {
-        // Buyers and Sellers are auto-approved, go to login
-        navigate('/login');
+        // Buyers and Sellers are auto-approved, go directly to dashboard
+        navigate('/dashboard');
       }
     } catch (err) {
       console.error('Registration error:', err);

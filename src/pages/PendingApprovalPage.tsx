@@ -14,7 +14,14 @@ import { useAuth } from '@/hooks/useAuth';
 
 export default function PendingApprovalPage() {
   const navigate = useNavigate();
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
+
+  // Redirect if user is already approved
+  React.useEffect(() => {
+    if (user && user.verificationStatus === 'approved') {
+      navigate('/dashboard', { replace: true });
+    }
+  }, [user, navigate]);
 
   const handleLogout = async () => {
     try {

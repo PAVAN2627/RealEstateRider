@@ -135,7 +135,12 @@ const Register = () => {
         }
       }
       
-      toast.success("Registration successful! Please wait for admin approval to access your account.");
+      // Show appropriate success message based on role
+      if (role === "agent") {
+        toast.success("Registration successful! Please wait for admin approval to access your account.");
+      } else {
+        toast.success("Registration successful! Welcome to EstateSphere.");
+      }
       // Navigation handled by useEffect
     } catch (error: any) {
       console.error("Registration error:", error);
