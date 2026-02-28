@@ -2,7 +2,7 @@
  * Property Type Definitions
  * 
  * Defines types for property management, property types, availability status,
- * location data, and property filtering in the EstateSphere platform.
+ * location data, and property filtering in the RealEstateRider platform.
  * 
  * Requirements: 4.1, 4.2, 6.3, 6.4, 6.6
  */

@@ -1,6 +1,6 @@
 # Dashboard Components
 
-This directory contains reusable components for role-specific dashboards in the EstateSphere platform.
+This directory contains reusable components for role-specific dashboards in the RealEstateRider platform.
 
 ## Components
 

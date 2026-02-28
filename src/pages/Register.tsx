@@ -80,16 +80,14 @@ const Register = () => {
       return;
     }
 
-    // Validate phone for non-admin users
-    if (role !== "admin") {
-      if (!phone || phone.trim().length === 0) {
-        toast.error("Phone number is required");
-        return;
-      }
-      if (!/^[0-9]{10}$/.test(phone.trim())) {
-        toast.error("Phone number must be 10 digits");
-        return;
-      }
+    // Validate phone for all users
+    if (!phone || phone.trim().length === 0) {
+      toast.error("Phone number is required");
+      return;
+    }
+    if (!/^[0-9]{10}$/.test(phone.trim())) {
+      toast.error("Phone number must be 10 digits");
+      return;
     }
 
     if (password.length < 8) {
@@ -119,8 +117,7 @@ const Register = () => {
     try {
       const userRole = mapToUserRole(role);
       const fullName = role === "admin" ? "Admin" : `${firstName} ${lastName}`.trim();
-      const userPhone = role === "admin" ? "0000000000" : phone; // Default phone for admin
-      const userId = await register(email, password, userRole, fullName, userPhone);
+      const userId = await register(email, password, userRole, fullName, phone.trim());
       
       // Upload Aadhar document only for Sellers and Agents
       if ((role === "seller" || role === "agent") && aadharDocument && userId) {
@@ -139,7 +136,7 @@ const Register = () => {
       if (role === "agent") {
         toast.success("Registration successful! Please wait for admin approval to access your account.");
       } else {
-        toast.success("Registration successful! Welcome to EstateSphere.");
+        toast.success("Registration successful! Welcome to RealEstateRider.");
       }
       // Navigation handled by useEffect
     } catch (error: any) {

@@ -2,7 +2,7 @@
  * User Type Definitions
  * 
  * Defines types for user management, roles, verification status,
- * and agent profiles in the EstateSphere platform.
+ * and agent profiles in the RealEstateRider platform.
  * 
  * Requirements: 1.1, 2.1, 10.1
  */

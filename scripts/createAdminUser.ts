@@ -69,20 +69,25 @@ function question(query: string): Promise<string> {
 
 async function createAdminUser() {
   try {
-    console.log('\n=== EstateSphere Admin User Creation ===\n');
+    console.log('\n=== RealEstateRider Admin User Creation ===\n');
 
     // Get admin details from user input
     const email = await question('Enter admin email: ');
     const password = await question('Enter admin password (min 6 characters): ');
     const name = await question('Enter admin name: ');
+    const phone = await question('Enter admin phone (10 digits): ');
 
     // Validate inputs
-    if (!email || !password || !name) {
+    if (!email || !password || !name || !phone) {
       throw new Error('All fields are required');
     }
 
     if (password.length < 6) {
       throw new Error('Password must be at least 6 characters');
+    }
+
+    if (!/^[0-9]{10}$/.test(phone.trim())) {
+      throw new Error('Phone number must be 10 digits');
     }
 
     console.log('\nCreating admin user...');
@@ -102,7 +107,7 @@ async function createAdminUser() {
       createdAt: Timestamp.now(),
       profile: {
         name: name,
-        phone: '0000000000', // Default phone for admin
+        phone: phone.trim(),
       },
     };
 

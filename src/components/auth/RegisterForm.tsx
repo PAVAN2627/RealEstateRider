@@ -132,7 +132,7 @@ export default function RegisterForm() {
     <Card className="w-full max-w-md">
       <CardHeader>
         <CardTitle>Register</CardTitle>
-        <CardDescription>Create your EstateSphere account</CardDescription>
+        <CardDescription>Create your RealEstateRider account</CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
