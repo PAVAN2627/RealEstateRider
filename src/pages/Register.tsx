@@ -29,6 +29,25 @@ const Register = () => {
   const [adminSecretKey, setAdminSecretKey] = useState("");
 
   /**
+   * Check if form is valid and complete
+   */
+  const isFormValid = (): boolean => {
+    // Common fields for all users
+    if (!email || !password || !phone) return false;
+    
+    // Name fields for non-admin users
+    if (role !== "admin" && (!firstName || !lastName)) return false;
+    
+    // Admin secret key for admin users
+    if (role === "admin" && !adminSecretKey) return false;
+    
+    // Aadhar document for sellers and agents
+    if ((role === "seller" || role === "agent") && !aadharDocument) return false;
+    
+    return true;
+  };
+
+  /**
    * Redirect authenticated users to dashboard or pending approval page
    * Requirement 1.1: Redirect after successful registration
    */
@@ -289,23 +308,23 @@ const Register = () => {
               </div>
             </div>
 
-            {/* Phone field - Only for non-admin users */}
-            {role !== "admin" && (
-              <div>
-                <label className="text-sm font-medium text-foreground mb-1.5 block">Phone (Optional)</label>
-                <div className="relative">
-                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <input 
-                    type="tel" 
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    placeholder="+91 98765 43210"
-                    disabled={loading}
-                    className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-input bg-background text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50" 
-                  />
-                </div>
+            {/* Phone field - Required for all users */}
+            <div>
+              <label className="text-sm font-medium text-foreground mb-1.5 block">
+                Phone <span className="text-red-500">*</span>
+              </label>
+              <div className="relative">
+                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <input 
+                  type="tel" 
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder="+91 98765 43210"
+                  disabled={loading}
+                  className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-input bg-background text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50" 
+                />
               </div>
-            )}
+            </div>
 
             <div>
               <label className="text-sm font-medium text-foreground mb-1.5 block">Password</label>
@@ -404,7 +423,7 @@ const Register = () => {
 
             <Button 
               type="submit" 
-              disabled={loading}
+              disabled={loading || !isFormValid()}
               className="w-full gradient-primary text-primary-foreground border-0 py-2.5"
             >
               {loading ? "Creating Account..." : "Create Account"}

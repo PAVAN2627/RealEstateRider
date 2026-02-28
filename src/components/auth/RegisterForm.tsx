@@ -37,6 +37,22 @@ export default function RegisterForm() {
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
+  /**
+   * Check if form is complete (all required fields filled)
+   */
+  const isFormComplete = (): boolean => {
+    // Common required fields
+    if (!name || !email || !phone || !password || !confirmPassword || !role) return false;
+    
+    // Admin secret key for admin users
+    if (role === UserRole.ADMIN && !adminSecretKey) return false;
+    
+    // Aadhar document for non-admin users
+    if (role !== UserRole.ADMIN && !aadharDocument) return false;
+    
+    return true;
+  };
+
   const validateForm = (): boolean => {
     const errors: Record<string, string> = {};
 
@@ -325,7 +341,7 @@ export default function RegisterForm() {
 
           {error && <ErrorMessage message={error} />}
 
-          <Button type="submit" className="w-full" disabled={loading}>
+          <Button type="submit" className="w-full" disabled={loading || !isFormComplete()}>
             {loading ? (
               <>
                 <LoadingSpinner size="sm" />
