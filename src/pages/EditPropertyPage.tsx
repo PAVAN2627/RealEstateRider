@@ -7,7 +7,7 @@ import PropertyForm from '@/components/property/PropertyForm';
 import LoadingSpinner from '@/components/shared/LoadingSpinner';
 import ErrorMessage from '@/components/shared/ErrorMessage';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, LayoutDashboard, Home, MessageSquare, User } from 'lucide-react';
+import { ArrowLeft, LayoutDashboard, Home, MessageSquare, User, Settings } from 'lucide-react';
 import { Property } from '@/types/property.types';
 import * as propertyService from '@/services/propertyService';
 import { toast } from 'sonner';
@@ -53,18 +53,9 @@ const EditPropertyPage = () => {
     fetchProperty();
   }, [id]);
 
-  const handleSubmit = async (data: Partial<Property>) => {
-    if (!id) return;
-
-    try {
-      await propertyService.updateProperty(id, data);
-      toast.success('Property updated successfully!');
-      navigate(`/properties/${id}`);
-    } catch (error) {
-      console.error('Error updating property:', error);
-      toast.error('Failed to update property. Please try again.');
-      throw error;
-    }
+  const handleSuccess = () => {
+    toast.success('Property updated successfully!');
+    navigate('/my-properties');
   };
 
   // Sidebar links based on user role - same as DashboardPage
@@ -155,9 +146,10 @@ const EditPropertyPage = () => {
 
       <div className="max-w-4xl">
         <PropertyForm
-          onSubmit={handleSubmit}
+          property={property}
+          onSuccess={handleSuccess}
           mode="edit"
-          initialData={property}
+          showHeader={false}
         />
       </div>
     </DashboardLayout>

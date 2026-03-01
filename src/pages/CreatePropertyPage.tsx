@@ -4,7 +4,7 @@ import { UserRole } from '@/types/user.types';
 import DashboardLayout from '@/components/DashboardLayout';
 import PropertyForm from '@/components/property/PropertyForm';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, LayoutDashboard, Home, MessageSquare, User } from 'lucide-react';
+import { ArrowLeft, LayoutDashboard, Home, MessageSquare, User, Settings } from 'lucide-react';
 import { CreatePropertyData } from '@/types/property.types';
 import * as propertyService from '@/services/propertyService';
 import { toast } from 'sonner';
@@ -23,16 +23,9 @@ const CreatePropertyPage = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
 
-  const handleSubmit = async (data: CreatePropertyData) => {
-    try {
-      const property = await propertyService.createProperty(data);
-      toast.success('Property created successfully! Awaiting admin approval.');
-      navigate(`/properties/${property.id}`);
-    } catch (error) {
-      console.error('Error creating property:', error);
-      toast.error('Failed to create property. Please try again.');
-      throw error;
-    }
+  const handleSuccess = () => {
+    toast.success('Property created successfully! Awaiting admin approval.');
+    navigate('/my-properties');
   };
 
   // Sidebar links based on user role - same as DashboardPage
@@ -96,7 +89,7 @@ const CreatePropertyPage = () => {
       </div>
 
       <div className="max-w-4xl">
-        <PropertyForm onSubmit={handleSubmit} mode="create" />
+        <PropertyForm onSuccess={handleSuccess} mode="create" showHeader={false} />
       </div>
     </DashboardLayout>
   );

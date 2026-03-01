@@ -35,6 +35,8 @@ interface PropertyFormProps {
   property?: Property;
   onSuccess?: () => void;
   onCancel?: () => void;
+  mode?: 'create' | 'edit';
+  showHeader?: boolean;
 }
 
 /**
@@ -88,10 +90,10 @@ interface FormErrors {
  * - 4.6: Support ownership document upload
  * - 11.2: Update existing properties
  */
-export default function PropertyForm({ property, onSuccess, onCancel }: PropertyFormProps) {
+export default function PropertyForm({ property, onSuccess, onCancel, mode, showHeader = true }: PropertyFormProps) {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const isEditMode = !!property;
+  const isEditMode = mode === 'edit' || !!property;
 
   // Form state
   const [formData, setFormData] = useState<FormData>({
@@ -443,17 +445,19 @@ export default function PropertyForm({ property, onSuccess, onCancel }: Property
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6 max-w-4xl mx-auto p-6">
-      <div className="space-y-2">
-        <h2 className="text-2xl font-bold">
-          {isEditMode ? 'Edit Property' : 'Create New Property'}
-        </h2>
-        <p className="text-muted-foreground">
-          {isEditMode
-            ? 'Update your property listing details'
-            : 'Fill in the details to list your property'}
-        </p>
-      </div>
+    <form onSubmit={handleSubmit} className="space-y-6">
+      {showHeader && (
+        <div className="space-y-2">
+          <h2 className="text-2xl font-bold">
+            {isEditMode ? 'Edit Property' : 'Create New Property'}
+          </h2>
+          <p className="text-muted-foreground">
+            {isEditMode
+              ? 'Update your property listing details'
+              : 'Fill in the details to list your property'}
+          </p>
+        </div>
+      )}
 
       {/* Error Message */}
       {error && <ErrorMessage message={error} onRetry={() => setError(null)} />}
