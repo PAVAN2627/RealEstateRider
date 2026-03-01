@@ -4,10 +4,7 @@
 
 // Get the base URL for links in emails
 const getBaseUrl = () => {
-  if (typeof window !== 'undefined') {
-    return window.location.origin;
-  }
-  return 'https://realestaterider.com'; // Fallback URL
+  return 'https://real-estate-rider.vercel.app';
 };
 
 const getEmailWrapper = (content: string) => `
