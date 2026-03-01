@@ -59,6 +59,7 @@ export interface Location {
   address: string;
   city: string;
   state: string;
+  pincode: string;
   coordinates?: Coordinates;
 }
 
@@ -71,7 +72,7 @@ export interface Property {
   description: string;
   price: number;
   propertyType: PropertyType;
-  configuration?: PropertyConfiguration;
+  configuration: PropertyConfiguration;
   location: Location;
   availabilityStatus: AvailabilityStatus;
   verificationStatus: 'pending' | 'approved' | 'rejected';

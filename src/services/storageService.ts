@@ -248,10 +248,43 @@ export async function uploadAgentPhoto(
     
     // Compress image (smaller size for profile photos)
     const compressedImage = await compressImage(base64Image, 400, 0.8);
-    
+
     return compressedImage;
   } catch (error: any) {
     throw new Error(`Agent photo upload failed: ${error.message}`);
+  }
+}
+
+/**
+ * Upload selfie photo for user verification (Firestore-only version using Base64)
+ * 
+ * NOTE: This stores photos as Base64 in Firestore since Firebase Storage is not enabled.
+ * 
+ * @param file - Selfie photo file to upload
+ * @param userId - User ID for organizing storage (not used in Base64 version)
+ * @returns Promise<string> - Base64 data URL
+ * @throws Error if validation or conversion fails
+ * 
+ * Requirements: Upload selfie photo with validation and return data URL
+ */
+export async function uploadSelfiePhoto(
+  file: File,
+  userId: string
+): Promise<string> {
+  try {
+    // Validate file (use smaller max size for Base64 storage)
+    const MAX_BASE64_SIZE = 500 * 1024; // 500KB for selfie photos
+    validateFile(file, MAX_BASE64_SIZE, ALLOWED_IMAGE_TYPES);
+
+    // Convert to Base64
+    const base64Image = await convertImageToBase64(file);
+    
+    // Compress image
+    const compressedImage = await compressImage(base64Image, 800, 0.7);
+
+    return compressedImage;
+  } catch (error: any) {
+    throw new Error(`Selfie photo upload failed: ${error.message}`);
   }
 }
 

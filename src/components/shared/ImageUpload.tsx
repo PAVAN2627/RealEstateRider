@@ -17,43 +17,62 @@ import ErrorMessage from './ErrorMessage';
  * ImageUpload props
  */
 interface ImageUploadProps {
-  onUpload: (files: File[]) => Promise<void>;
+  onFilesSelected: (files: File[]) => void;
+  selectedFiles?: File[];
   maxFiles?: number;
   maxSizeMB?: number;
   accept?: string;
   multiple?: boolean;
   existingImages?: string[];
   onRemoveExisting?: (imageUrl: string) => void;
+  onRemoveSelected?: (index: number) => void;
 }
 
 /**
  * ImageUpload Component
  * 
- * Provides file selection UI, validation, upload progress, and image preview.
- * Supports multiple image uploads with drag-and-drop functionality.
+ * Provides file selection UI, validation, and image preview.
+ * Files are stored locally and uploaded when parent form is submitted.
  * 
  * Requirements:
  * - 4.3: Validate each image file type and size (maximum 5MB per image)
  * - 4.4: Allow up to 10 images per Property
  * - 16.1: Validate file extension is in the allowed list
  * - 16.2: Reject upload and display error when file exceeds size limit
- * - 16.3: Display upload progress and success confirmation
  */
 export default function ImageUpload({
-  onUpload,
+  onFilesSelected,
+  selectedFiles = [],
   maxFiles = 10,
   maxSizeMB = 5,
   accept = 'image/jpeg,image/jpg,image/png',
   multiple = true,
   existingImages = [],
   onRemoveExisting,
+  onRemoveSelected,
 }: ImageUploadProps) {
-  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [previews, setPreviews] = useState<string[]>([]);
-  const [uploading, setUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Generate previews when selectedFiles change
+  React.useEffect(() => {
+    const newPreviews: string[] = [];
+    selectedFiles.forEach((file) => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        newPreviews.push(reader.result as string);
+        if (newPreviews.length === selectedFiles.length) {
+          setPreviews(newPreviews);
+        }
+      };
+      reader.readAsDataURL(file);
+    });
+    
+    if (selectedFiles.length === 0) {
+      setPreviews([]);
+    }
+  }, [selectedFiles]);
 
   const validateFile = (file: File): string | null => {
     // Check file type
@@ -86,7 +105,6 @@ export default function ImageUpload({
 
     // Validate each file
     const validFiles: File[] = [];
-    const newPreviews: string[] = [];
 
     for (const file of filesArray) {
       const validationError = validateFile(file);
@@ -96,64 +114,17 @@ export default function ImageUpload({
       }
 
       validFiles.push(file);
-      
-      // Create preview
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        newPreviews.push(reader.result as string);
-        if (newPreviews.length === validFiles.length) {
-          setPreviews(prev => [...prev, ...newPreviews]);
-        }
-      };
-      reader.readAsDataURL(file);
     }
 
-    setSelectedFiles(prev => [...prev, ...validFiles]);
+    // Notify parent component with all files
+    onFilesSelected([...selectedFiles, ...validFiles]);
   };
 
-  const handleRemoveSelected = (index: number) => {
-    setSelectedFiles(prev => prev.filter((_, i) => i !== index));
-    setPreviews(prev => prev.filter((_, i) => i !== index));
-  };
-
-  const handleUpload = async () => {
-    if (selectedFiles.length === 0) {
-      setError('Please select at least one file to upload');
-      return;
-    }
-
-    setUploading(true);
-    setUploadProgress(0);
-    setError(null);
-
-    try {
-      // Simulate progress (in real implementation, track actual upload progress)
-      const progressInterval = setInterval(() => {
-        setUploadProgress(prev => {
-          if (prev >= 90) {
-            clearInterval(progressInterval);
-            return 90;
-          }
-          return prev + 10;
-        });
-      }, 200);
-
-      await onUpload(selectedFiles);
-      
-      clearInterval(progressInterval);
-      setUploadProgress(100);
-      
-      // Clear selected files after successful upload
-      setTimeout(() => {
-        setSelectedFiles([]);
-        setPreviews([]);
-        setUploadProgress(0);
-      }, 1000);
-    } catch (err) {
-      console.error('Upload error:', err);
-      setError(err instanceof Error ? err.message : 'Upload failed. Please try again.');
-    } finally {
-      setUploading(false);
+  const handleRemoveSelectedFile = (index: number) => {
+    const newFiles = selectedFiles.filter((_, i) => i !== index);
+    onFilesSelected(newFiles);
+    if (onRemoveSelected) {
+      onRemoveSelected(index);
     }
   };
 
@@ -237,9 +208,10 @@ export default function ImageUpload({
                   className="w-full h-32 object-cover rounded-lg border"
                 />
                 <button
+                  type="button"
                   onClick={(e) => {
                     e.stopPropagation();
-                    handleRemoveSelected(index);
+                    handleRemoveSelectedFile(index);
                   }}
                   className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
                 >
@@ -248,25 +220,10 @@ export default function ImageUpload({
               </div>
             ))}
           </div>
-        </div>
-      )}
-
-      {/* Upload Progress */}
-      {uploading && (
-        <div className="space-y-2">
-          <Progress value={uploadProgress} />
-          <p className="text-sm text-center text-muted-foreground">
-            Uploading... {uploadProgress}%
+          <p className="text-xs text-muted-foreground mt-2">
+            Images will be uploaded when you submit the form
           </p>
         </div>
-      )}
-
-      {/* Upload Button */}
-      {selectedFiles.length > 0 && !uploading && (
-        <Button onClick={handleUpload} className="w-full">
-          <Upload className="mr-2 h-4 w-4" />
-          Upload {selectedFiles.length} {selectedFiles.length === 1 ? 'Image' : 'Images'}
-        </Button>
       )}
     </div>
   );

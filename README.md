@@ -1,61 +1,132 @@
-# Real Estate Management Platform
+# RealEstateRider
 
-## Project info
+A modern real estate management platform built with React, TypeScript, and Firebase.
 
-A modern real estate management application built with React, TypeScript, and Vite.
+## Features
 
-## How can I edit this code?
+- **Multi-Role System**: Buyers, Sellers, Agents, and Admin
+- **Property Management**: Create, edit, and browse property listings
+- **Smart Search**: Filter by type, price, location with Google Maps integration
+- **Inquiry System**: WhatsApp-style chat between buyers and sellers
+- **Admin Dashboard**: Approve users and properties with document verification
+- **Email Notifications**: Automated emails for approvals and inquiries
+- **AI Chatbot**: Gemini-powered assistant for platform help
+- **Wishlist**: Save favorite properties
 
-**Use your preferred IDE**
+## Tech Stack
 
-Clone this repo and push changes using your favorite IDE.
+- React 18 + TypeScript + Vite
+- Firebase (Auth, Firestore)
+- Tailwind CSS + shadcn/ui
+- Google Maps API
+- Gemini AI
+- Google Apps Script (Email)
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+## Quick Start
 
-Follow these steps:
+```bash
+# Install dependencies
+npm install
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+# Configure environment variables
+cp .env.example .env
+# Edit .env with your API keys
 
-# Step 2: Navigate to the project directory
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install necessary dependencies
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
+# Start development server
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+## Environment Setup
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+Required API keys in `.env`:
 
-**Use GitHub Codespaces**
+```env
+# Firebase
+VITE_FIREBASE_API_KEY=
+VITE_FIREBASE_AUTH_DOMAIN=
+VITE_FIREBASE_PROJECT_ID=
+VITE_FIREBASE_STORAGE_BUCKET=
+VITE_FIREBASE_MESSAGING_SENDER_ID=
+VITE_FIREBASE_APP_ID=
+VITE_FIREBASE_MEASUREMENT_ID=
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+# Google Services
+VITE_GOOGLE_MAPS_API_KEY=
+VITE_GEMINI_API_KEY=
+VITE_GOOGLE_SCRIPT_URL=
 
-## What technologies are used for this project?
+# Admin
+VITE_ADMIN_SECRET_KEY=
+```
 
-This project is built with:
+### Get API Keys
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+1. **Firebase**: [console.firebase.google.com](https://console.firebase.google.com/)
+2. **Google Maps**: [console.cloud.google.com](https://console.cloud.google.com/)
+3. **Gemini AI**: [makersuite.google.com](https://makersuite.google.com/app/apikey)
+4. **Email Service**: Deploy `Code.gs` to [script.google.com](https://script.google.com/)
 
-## How can I deploy this project?
+## Email Service Setup
 
-You can deploy this project using various hosting platforms like Vercel, Netlify, or GitHub Pages.
+1. Open [Google Apps Script](https://script.google.com/)
+2. Create new project
+3. Copy code from `Code.gs`
+4. Deploy as Web App (Anyone can access)
+5. Copy URL to `VITE_GOOGLE_SCRIPT_URL`
 
-## Can I connect a custom domain?
+## User Roles
 
-Yes, most hosting platforms support custom domain configuration through their settings.
+### Buyer
+- Browse and search properties
+- Save to wishlist
+- Send inquiries
+
+### Seller/Agent
+- List properties with images
+- Manage listings
+- Respond to inquiries
+- Requires admin approval
+
+### Admin
+- Approve/reject users
+- Approve/reject properties
+- View activity logs
+
+## Project Structure
+
+```
+src/
+├── components/     # React components
+├── services/       # API services
+├── context/        # React context
+├── hooks/          # Custom hooks
+├── pages/          # Page components
+└── types/          # TypeScript types
+```
+
+## Build & Deploy
+
+```bash
+# Build for production
+npm run build
+
+# Deploy to Firebase
+firebase deploy
+```
+
+## Scripts
+
+```bash
+npm run dev      # Development server
+npm run build    # Production build
+npm run preview  # Preview build
+npm run lint     # Run linter
+```
+
+## License
+
+Private and Proprietary
+
+---
+
+Built with React, TypeScript, and Firebase

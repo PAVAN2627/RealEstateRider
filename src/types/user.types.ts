@@ -45,10 +45,12 @@ export interface User {
   email: string;
   role: UserRole;
   verificationStatus: VerificationStatus;
-  aadharDocumentUrl?: string;
+  aadharDocumentUrl?: string; // Aadhar or PAN card
+  selfiePhotoUrl?: string; // Live selfie photo for verification
   createdAt: Timestamp;
   lastLoginAt?: Timestamp;
   profile: UserProfile;
+  isGoogleSignIn?: boolean; // Flag to indicate if user signed in with Google
 }
 
 /**

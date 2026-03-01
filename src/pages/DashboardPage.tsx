@@ -3,7 +3,7 @@ import { BuyerDashboard, SellerDashboard, AgentDashboard, AdminDashboard } from 
 import LoadingSpinner from '@/components/shared/LoadingSpinner';
 import { UserRole } from '@/types/user.types';
 import DashboardLayout from '@/components/DashboardLayout';
-import { LayoutDashboard, Home, Heart, MessageSquare, User, Map, Settings, UserCheck, CheckSquare, Users, Building2, Activity } from 'lucide-react';
+import { LayoutDashboard, Home, Heart, MessageSquare, User, Map, UserCheck, CheckSquare, Users, Building2, Activity } from 'lucide-react';
 
 /**
  * DashboardPage Component

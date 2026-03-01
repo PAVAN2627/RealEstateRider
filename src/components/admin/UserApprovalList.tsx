@@ -7,9 +7,10 @@
  * Requirements: 3.5, 12.1, 12.2, 12.3, 12.5
  */
 
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { User, VerificationStatus } from '../../types/user.types';
 import { getUsersByRole, updateVerificationStatus } from '../../services/userService';
+import { sendUserApprovalEmail, sendUserRejectionEmail } from '../../services/emailService';
 import LoadingSpinner from '../shared/LoadingSpinner';
 import ErrorMessage from '../shared/ErrorMessage';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
@@ -121,6 +122,21 @@ export default function UserApprovalList() {
       setActionLoading(user.uid);
       await updateVerificationStatus(user.uid, VerificationStatus.APPROVED, currentUser.uid);
       
+      // Send approval email
+      try {
+        if (user.email) {
+          await sendUserApprovalEmail(
+            user.email,
+            user.profile.name,
+            user.role
+          );
+          console.log('✅ User approval email sent');
+        }
+      } catch (emailError) {
+        console.error('Failed to send approval email:', emailError);
+        // Don't fail the approval if email fails
+      }
+      
       // Immediately remove from local state for better UX
       setUsers(prevUsers => prevUsers.filter(u => u.uid !== user.uid));
       
@@ -164,6 +180,21 @@ export default function UserApprovalList() {
     try {
       setActionLoading(user.uid);
       await updateVerificationStatus(user.uid, VerificationStatus.REJECTED, currentUser.uid);
+      
+      // Send rejection email
+      try {
+        if (user.email) {
+          await sendUserRejectionEmail(
+            user.email,
+            user.profile.name,
+            'Your account did not meet our verification requirements.'
+          );
+          console.log('✅ User rejection email sent');
+        }
+      } catch (emailError) {
+        console.error('Failed to send rejection email:', emailError);
+        // Don't fail the rejection if email fails
+      }
       
       // Immediately remove from local state for better UX
       setUsers(prevUsers => prevUsers.filter(u => u.uid !== user.uid));
@@ -335,38 +366,57 @@ export default function UserApprovalList() {
                   </div>
                 </div>
 
-                {/* Aadhar Document Thumbnail */}
-                {user.aadharDocumentUrl && (
+                {/* ID Proof and Selfie Documents */}
+                {(user.aadharDocumentUrl || user.selfiePhotoUrl) && (
                   <div>
-                    <p className="text-xs font-medium text-muted-foreground mb-2">Aadhar Document</p>
-                    <div 
-                      className="relative w-full h-24 rounded-lg overflow-hidden bg-muted cursor-pointer hover:opacity-80 transition-opacity"
-                      onClick={() => openAadharViewer(user)}
-                    >
-                      {user.aadharDocumentUrl.startsWith('data:application/pdf') ? (
-                        <div className="w-full h-full flex items-center justify-center bg-gray-100">
-                          <FileText className="h-8 w-8 text-gray-400" />
-                          <span className="text-xs text-gray-500 ml-2">PDF Document</span>
+                    <p className="text-xs font-medium text-muted-foreground mb-2">Verification Documents</p>
+                    <div className="grid grid-cols-2 gap-2">
+                      {/* ID Proof Thumbnail */}
+                      {user.aadharDocumentUrl && (
+                        <div>
+                          <p className="text-xs text-muted-foreground mb-1">ID Proof</p>
+                          <div 
+                            className="relative w-full h-20 rounded-lg overflow-hidden bg-muted cursor-pointer hover:opacity-80 transition-opacity"
+                            onClick={() => openAadharViewer(user)}
+                          >
+                            {user.aadharDocumentUrl.startsWith('data:application/pdf') ? (
+                              <div className="w-full h-full flex items-center justify-center bg-gray-100">
+                                <FileText className="h-6 w-6 text-gray-400" />
+                              </div>
+                            ) : (
+                              <img
+                                src={user.aadharDocumentUrl}
+                                alt="ID Proof"
+                                className="w-full h-full object-cover"
+                              />
+                            )}
+                          </div>
                         </div>
-                      ) : (
-                        <img
-                          src={user.aadharDocumentUrl}
-                          alt="Aadhar Document"
-                          className="w-full h-full object-cover"
-                        />
                       )}
-                      <div className="absolute inset-0 bg-black/0 hover:bg-black/10 transition-colors flex items-center justify-center">
-                        <span className="text-xs text-white opacity-0 hover:opacity-100 transition-opacity">
-                          Click to view
-                        </span>
-                      </div>
+                      
+                      {/* Selfie Photo Thumbnail */}
+                      {user.selfiePhotoUrl && (
+                        <div>
+                          <p className="text-xs text-muted-foreground mb-1">Selfie Photo</p>
+                          <div 
+                            className="relative w-full h-20 rounded-lg overflow-hidden bg-muted cursor-pointer hover:opacity-80 transition-opacity"
+                            onClick={() => openAadharViewer(user)}
+                          >
+                            <img
+                              src={user.selfiePhotoUrl}
+                              alt="Selfie Photo"
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}
 
-                {!user.aadharDocumentUrl && (
+                {!user.aadharDocumentUrl && !user.selfiePhotoUrl && (
                   <div className="text-sm text-muted-foreground text-center py-2 bg-muted rounded">
-                    No Aadhar document uploaded
+                    No verification documents uploaded
                   </div>
                 )}
 
@@ -460,14 +510,15 @@ export default function UserApprovalList() {
         <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
-              Identity Verification Document - {selectedUser?.profile.name}
+              Verification Documents - {selectedUser?.profile.name}
             </DialogTitle>
           </DialogHeader>
           
-          <div className="space-y-4">
+          <div className="space-y-6">
+            {/* ID Proof Document */}
             {selectedUser?.aadharDocumentUrl && (
-              <>
-                {/* Check if it's a PDF or image based on Base64 data URL prefix */}
+              <div>
+                <h3 className="text-lg font-semibold mb-3">ID Proof (Aadhar/PAN Card)</h3>
                 {selectedUser.aadharDocumentUrl.startsWith('data:application/pdf') ? (
                   <div className="border rounded-lg p-8 text-center bg-muted/30">
                     <FileText className="h-20 w-20 mx-auto mb-4 text-muted-foreground" />
@@ -480,7 +531,7 @@ export default function UserApprovalList() {
                       onClick={() => {
                         const link = document.createElement('a');
                         link.href = selectedUser.aadharDocumentUrl!;
-                        link.download = `aadhar-${selectedUser.uid}.pdf`;
+                        link.download = `id-proof-${selectedUser.uid}.pdf`;
                         link.click();
                       }}
                     >
@@ -491,37 +542,39 @@ export default function UserApprovalList() {
                   <div className="border rounded-lg overflow-hidden bg-black/5">
                     <img
                       src={selectedUser.aadharDocumentUrl}
-                      alt="Aadhar Document"
-                      className="w-full h-auto max-h-[70vh] object-contain"
+                      alt="ID Proof Document"
+                      className="w-full h-auto max-h-[50vh] object-contain"
                       style={{ imageRendering: 'crisp-edges' }}
                     />
                   </div>
                 )}
-                
-                {/* Action Buttons */}
-                <div className="flex justify-end gap-2 pt-2">
-                  <Button
-                    variant="outline"
-                    onClick={() => setAadharDialogOpen(false)}
-                  >
-                    Close
-                  </Button>
-                  {!selectedUser.aadharDocumentUrl.startsWith('data:application/pdf') && (
-                    <Button
-                      onClick={() => {
-                        const link = document.createElement('a');
-                        link.href = selectedUser.aadharDocumentUrl!;
-                        link.download = `aadhar-${selectedUser.uid}.jpg`;
-                        link.target = '_blank';
-                        link.click();
-                      }}
-                    >
-                      Open in New Tab
-                    </Button>
-                  )}
-                </div>
-              </>
+              </div>
             )}
+
+            {/* Selfie Photo */}
+            {selectedUser?.selfiePhotoUrl && (
+              <div>
+                <h3 className="text-lg font-semibold mb-3">Live Selfie Photo</h3>
+                <div className="border rounded-lg overflow-hidden bg-black/5">
+                  <img
+                    src={selectedUser.selfiePhotoUrl}
+                    alt="Selfie Photo"
+                    className="w-full h-auto max-h-[50vh] object-contain"
+                    style={{ imageRendering: 'crisp-edges' }}
+                  />
+                </div>
+              </div>
+            )}
+            
+            {/* Action Buttons */}
+            <div className="flex justify-end gap-2 pt-2">
+              <Button
+                variant="outline"
+                onClick={() => setAadharDialogOpen(false)}
+              >
+                Close
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>
@@ -617,30 +670,51 @@ export default function UserApprovalList() {
                 </div>
               </div>
 
-              {/* Aadhar Document */}
-              {selectedUser.aadharDocumentUrl && (
+              {/* Verification Documents */}
+              {(selectedUser.aadharDocumentUrl || selectedUser.selfiePhotoUrl) && (
                 <div>
                   <h4 className="font-semibold mb-3 flex items-center gap-2">
                     <FileText className="h-4 w-4" />
-                    Aadhar Document
+                    Verification Documents
                   </h4>
-                  <div className="bg-muted/50 p-4 rounded-lg">
-                    <div className="aspect-video rounded-lg overflow-hidden bg-white mb-3">
-                      {selectedUser.aadharDocumentUrl.startsWith('data:application/pdf') ? (
-                        <div className="w-full h-full flex items-center justify-center">
-                          <div className="text-center">
-                            <FileText className="h-16 w-16 text-gray-400 mx-auto mb-2" />
-                            <p className="text-sm text-muted-foreground">PDF Document</p>
-                          </div>
+                  <div className="bg-muted/50 p-4 rounded-lg space-y-4">
+                    {/* ID Proof */}
+                    {selectedUser.aadharDocumentUrl && (
+                      <div>
+                        <p className="text-sm font-medium mb-2">ID Proof (Aadhar/PAN Card)</p>
+                        <div className="aspect-video rounded-lg overflow-hidden bg-white mb-2">
+                          {selectedUser.aadharDocumentUrl.startsWith('data:application/pdf') ? (
+                            <div className="w-full h-full flex items-center justify-center">
+                              <div className="text-center">
+                                <FileText className="h-16 w-16 text-gray-400 mx-auto mb-2" />
+                                <p className="text-sm text-muted-foreground">PDF Document</p>
+                              </div>
+                            </div>
+                          ) : (
+                            <img
+                              src={selectedUser.aadharDocumentUrl}
+                              alt="ID Proof"
+                              className="w-full h-full object-contain"
+                            />
+                          )}
                         </div>
-                      ) : (
-                        <img
-                          src={selectedUser.aadharDocumentUrl}
-                          alt="Aadhar Document"
-                          className="w-full h-full object-contain"
-                        />
-                      )}
-                    </div>
+                      </div>
+                    )}
+
+                    {/* Selfie Photo */}
+                    {selectedUser.selfiePhotoUrl && (
+                      <div>
+                        <p className="text-sm font-medium mb-2">Live Selfie Photo</p>
+                        <div className="aspect-video rounded-lg overflow-hidden bg-white mb-2">
+                          <img
+                            src={selectedUser.selfiePhotoUrl}
+                            alt="Selfie Photo"
+                            className="w-full h-full object-contain"
+                          />
+                        </div>
+                      </div>
+                    )}
+
                     <div className="flex gap-2">
                       <Button
                         variant="outline"
@@ -654,31 +728,19 @@ export default function UserApprovalList() {
                         <FileText className="h-4 w-4 mr-2" />
                         View Full Size
                       </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        asChild
-                      >
-                        <a
-                          href={selectedUser.aadharDocumentUrl}
-                          download={`aadhar_${selectedUser.uid}.${selectedUser.aadharDocumentUrl.startsWith('data:application/pdf') ? 'pdf' : 'jpg'}`}
-                        >
-                          Download
-                        </a>
-                      </Button>
                     </div>
                   </div>
                 </div>
               )}
 
-              {!selectedUser.aadharDocumentUrl && (
+              {!selectedUser.aadharDocumentUrl && !selectedUser.selfiePhotoUrl && (
                 <div>
                   <h4 className="font-semibold mb-3 flex items-center gap-2">
                     <FileText className="h-4 w-4" />
-                    Aadhar Document
+                    Verification Documents
                   </h4>
                   <div className="bg-muted/50 p-4 rounded-lg text-center text-muted-foreground">
-                    No Aadhar document uploaded
+                    No verification documents uploaded
                   </div>
                 </div>
               )}

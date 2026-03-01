@@ -10,6 +10,7 @@ import LoadingSpinner from '@/components/shared/LoadingSpinner';
 import ErrorMessage from '@/components/shared/ErrorMessage';
 import { Property } from '@/types/property.types';
 import { Inquiry, InquiryStatus } from '@/types/inquiry.types';
+import PlatformChatbot from '@/components/chatbot/PlatformChatbot';
 import * as propertyService from '@/services/propertyService';
 import * as inquiryService from '@/services/inquiryService';
 
@@ -96,32 +97,33 @@ const AgentDashboard = () => {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Welcome Section */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold font-heading text-foreground">
-            Welcome back, Agent {user?.profile?.name || ''} 🏢
-          </h1>
-          <p className="text-muted-foreground mt-1">
-            Manage your client properties and respond to inquiries
-          </p>
+    <>
+      <div className="space-y-6">
+        {/* Welcome Section */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold font-heading text-foreground">
+              Welcome back, Agent {user?.profile?.name || ''} 🏢
+            </h1>
+            <p className="text-muted-foreground mt-1">
+              Manage your client properties and respond to inquiries
+            </p>
+          </div>
+          <div className="flex gap-2">
+            <Button asChild variant="outline" className="gap-2">
+              <Link to="/agent/profile">
+                <Settings className="w-4 h-4" />
+                Agent Profile
+              </Link>
+            </Button>
+            <Button asChild className="gap-2">
+              <Link to="/properties/new">
+                <PlusCircle className="w-4 h-4" />
+                Add Property
+              </Link>
+            </Button>
+          </div>
         </div>
-        <div className="flex gap-2">
-          <Button asChild variant="outline" className="gap-2">
-            <Link to="/agent/profile">
-              <Settings className="w-4 h-4" />
-              Agent Profile
-            </Link>
-          </Button>
-          <Button asChild className="gap-2">
-            <Link to="/properties/new">
-              <PlusCircle className="w-4 h-4" />
-              Add Property
-            </Link>
-          </Button>
-        </div>
-      </div>
 
       {/* Analytics Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -309,7 +311,9 @@ const AgentDashboard = () => {
           )}
         </CardContent>
       </Card>
-    </div>
+      </div>
+      <PlatformChatbot />
+    </>
   );
 };
 

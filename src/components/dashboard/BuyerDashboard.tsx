@@ -9,6 +9,7 @@ import { useWishlist } from '@/hooks/useWishlist';
 import { useInquiries } from '@/hooks/useInquiries';
 import LoadingSpinner from '@/components/shared/LoadingSpinner';
 import ErrorMessage from '@/components/shared/ErrorMessage';
+import PlatformChatbot from '@/components/chatbot/PlatformChatbot';
 
 /**
  * BuyerDashboard Component
@@ -102,16 +103,17 @@ const BuyerDashboard = () => {
   const uniquePropertiesContacted = new Set(inquiries?.map(inq => inq.propertyId) || []).size;
 
   return (
-    <div className="space-y-6">
-      {/* Welcome Section */}
-      <div>
-        <h1 className="text-2xl font-bold font-heading text-foreground">
-          Welcome back, {user?.profile?.name || 'Buyer'} 👋
-        </h1>
-        <p className="text-muted-foreground mt-1">
-          Here's your property search overview
-        </p>
-      </div>
+    <>
+      <div className="space-y-6">
+        {/* Welcome Section */}
+        <div>
+          <h1 className="text-2xl font-bold font-heading text-foreground">
+            Welcome back, {user?.profile?.name || 'Buyer'} 👋
+          </h1>
+          <p className="text-muted-foreground mt-1">
+            Here's your property search overview
+          </p>
+        </div>
 
       {/* Analytics Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -225,7 +227,9 @@ const BuyerDashboard = () => {
           )}
         </CardContent>
       </Card>
-    </div>
+      </div>
+      <PlatformChatbot />
+    </>
   );
 };
 

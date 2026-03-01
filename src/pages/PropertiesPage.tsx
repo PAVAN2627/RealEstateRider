@@ -4,7 +4,7 @@ import PropertyList from '@/components/property/PropertyList';
 import LoadingSpinner from '@/components/shared/LoadingSpinner';
 import ErrorMessage from '@/components/shared/ErrorMessage';
 import { Input } from '@/components/ui/input';
-import { Search, Home, Heart, LayoutDashboard, MessageSquare, Settings, User, Map } from 'lucide-react';
+import { Search, Home, Heart, LayoutDashboard, MessageSquare, User, Map } from 'lucide-react';
 import { PropertyFilters as PropertyFiltersType } from '@/types/property.types';
 import DashboardLayout from '@/components/DashboardLayout';
 import { useAuth } from '@/hooks/useAuth';
@@ -64,7 +64,7 @@ const PropertiesPage = () => {
           { to: '/my-properties', label: 'My Properties', icon: Home },
           { to: '/properties/new', label: 'Add Property', icon: Home },
           { to: '/received-inquiries', label: 'Inquiries', icon: MessageSquare },
-          { to: '/settings', label: 'Settings', icon: Settings },
+          { to: '/profile', label: 'Profile', icon: User },
         ];
       case UserRole.AGENT:
         return [

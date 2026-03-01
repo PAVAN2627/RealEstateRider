@@ -20,6 +20,7 @@ interface AuthContextValue {
   user: User | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
+  loginWithGoogle: () => Promise<void>;
   register: (email: string, password: string, role: UserRole, name: string, phone: string) => Promise<string | undefined>;
   logout: () => Promise<void>;
   isAuthenticated: boolean;
@@ -97,6 +98,27 @@ export function AuthProvider({ children }: AuthProviderProps) {
     setLoading(true);
     try {
       const userData = await authService.login(email, password);
+      setUser(userData);
+    } catch (error) {
+      setUser(null);
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  /**
+   * Login with Google function
+   * Authenticates user with Google OAuth
+   * 
+   * @throws Error if Google sign-in fails
+   * 
+   * Requirement: Google OAuth authentication
+   */
+  const loginWithGoogle = async (): Promise<void> => {
+    setLoading(true);
+    try {
+      const userData = await authService.signInWithGoogle();
       setUser(userData);
     } catch (error) {
       setUser(null);
@@ -192,6 +214,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     user,
     loading,
     login,
+    loginWithGoogle,
     register,
     logout,
     isAuthenticated,

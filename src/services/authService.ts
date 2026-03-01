@@ -10,6 +10,8 @@
 import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
+  signInWithPopup,
+  GoogleAuthProvider,
   signOut,
   updatePassword as firebaseUpdatePassword,
   User as FirebaseUser
@@ -45,9 +47,11 @@ export async function register(
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
     const firebaseUser = userCredential.user;
 
-    // Auto-approve Buyers, Sellers, and Admins. Agents need admin approval
+    // Buyers are auto-approved
+    // Sellers and Agents need to upload documents and get admin approval
+    // Admins are auto-approved
     const verificationStatus = 
-      role === UserRole.BUYER || role === UserRole.SELLER || role === UserRole.ADMIN
+      role === UserRole.BUYER || role === UserRole.ADMIN
         ? VerificationStatus.APPROVED
         : VerificationStatus.PENDING;
 
@@ -61,7 +65,8 @@ export async function register(
       profile: {
         name: name.trim() || email.split('@')[0], // Use name or fallback to email username
         phone: phone.trim()
-      }
+      },
+      isGoogleSignIn: false
     };
 
     // Save user document to Firestore
@@ -127,6 +132,80 @@ export async function login(email: string, password: string): Promise<User> {
     return user;
   } catch (error: any) {
     throw new Error(`Login failed: ${error.message}`);
+  }
+}
+
+/**
+ * Sign in with Google
+ * Authenticates user with Google OAuth and creates/retrieves user document
+ * 
+ * @returns Promise<User> - Authenticated user object
+ * @throws Error if Google sign-in fails
+ * 
+ * Requirement: Google OAuth authentication
+ */
+export async function signInWithGoogle(): Promise<User> {
+  try {
+    const provider = new GoogleAuthProvider();
+    const userCredential = await signInWithPopup(auth, provider);
+    const firebaseUser = userCredential.user;
+
+    // Check if user document exists
+    const userDocRef = doc(db, 'users', firebaseUser.uid);
+    const userDoc = await getDoc(userDocRef);
+
+    let user: User;
+
+    if (userDoc.exists()) {
+      // Existing user - retrieve and update last login
+      user = userDoc.data() as User;
+
+      // Check verification status
+      if (
+        user.verificationStatus === VerificationStatus.REJECTED ||
+        user.verificationStatus === VerificationStatus.SUSPENDED
+      ) {
+        await signOut(auth);
+        throw new Error('Account access denied. Please contact administrator.');
+      }
+
+      // Update last login timestamp
+      await updateDoc(userDocRef, {
+        lastLoginAt: Timestamp.now()
+      });
+    } else {
+      // New user - create minimal user document (role will be set during registration)
+      user = {
+        uid: firebaseUser.uid,
+        email: firebaseUser.email!,
+        role: UserRole.BUYER, // Temporary default, will be updated in registration
+        verificationStatus: VerificationStatus.PENDING, // Will be updated based on role selection
+        createdAt: Timestamp.now(),
+        lastLoginAt: Timestamp.now(),
+        profile: {
+          name: firebaseUser.displayName || firebaseUser.email!.split('@')[0],
+          phone: firebaseUser.phoneNumber || ''
+        },
+        isGoogleSignIn: true
+      };
+
+      await setDoc(userDocRef, user);
+    }
+
+    // Log login activity
+    logActivity({
+      userId: firebaseUser.uid,
+      actionType: 'login',
+      metadata: {
+        email: user.email,
+        role: user.role,
+        method: 'google'
+      }
+    }).catch(err => console.error('Failed to log activity:', err));
+
+    return user;
+  } catch (error: any) {
+    throw new Error(`Google sign-in failed: ${error.message}`);
   }
 }
 

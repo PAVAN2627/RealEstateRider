@@ -16,6 +16,9 @@ export default function PendingApprovalPage() {
   const navigate = useNavigate();
   const { logout, user } = useAuth();
 
+  // Get role label
+  const roleLabel = user?.role === 'seller' ? 'Seller' : user?.role === 'agent' ? 'Agent' : 'User';
+
   // Redirect if user is already approved
   React.useEffect(() => {
     if (user && user.verificationStatus === 'approved') {
@@ -43,13 +46,13 @@ export default function PendingApprovalPage() {
           </div>
           <CardTitle className="text-2xl">Account Pending Approval</CardTitle>
           <CardDescription>
-            Your agent registration is under review
+            Your {roleLabel.toLowerCase()} registration is under review
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
             <p className="text-sm text-yellow-800">
-              Thank you for registering as an agent! Your account and documents are currently being reviewed by our admin team.
+              Thank you for registering as a {roleLabel.toLowerCase()}! Your account and documents are currently being reviewed by our admin team.
             </p>
           </div>
 
@@ -61,7 +64,7 @@ export default function PendingApprovalPage() {
 
           <div className="pt-4 space-y-2">
             <p className="text-sm text-center text-muted-foreground">
-              You will receive an email notification once your account is approved.
+              You will receive a notification once your account is approved.
             </p>
             <Button
               onClick={handleLogout}

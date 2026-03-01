@@ -4,7 +4,7 @@ import { UserRole } from '@/types/user.types';
 import DashboardLayout from '@/components/DashboardLayout';
 import PropertyForm from '@/components/property/PropertyForm';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, LayoutDashboard, Home, MessageSquare, User, Settings } from 'lucide-react';
+import { ArrowLeft, LayoutDashboard, Home, MessageSquare, User } from 'lucide-react';
 import { CreatePropertyData } from '@/types/property.types';
 import * as propertyService from '@/services/propertyService';
 import { toast } from 'sonner';
@@ -39,7 +39,7 @@ const CreatePropertyPage = () => {
           { to: '/properties', label: 'Browse Properties', icon: Home },
           { to: '/wishlist', label: 'Wishlist', icon: Home },
           { to: '/my-inquiries', label: 'My Inquiries', icon: MessageSquare },
-          { to: '/settings', label: 'Settings', icon: Settings },
+          { to: '/profile', label: 'Profile', icon: User },
         ];
       case UserRole.SELLER:
         return [
@@ -47,7 +47,7 @@ const CreatePropertyPage = () => {
           { to: '/my-properties', label: 'My Properties', icon: Home },
           { to: '/properties/new', label: 'Add Property', icon: Home },
           { to: '/received-inquiries', label: 'Inquiries', icon: MessageSquare },
-          { to: '/settings', label: 'Settings', icon: Settings },
+          { to: '/profile', label: 'Profile', icon: User },
         ];
       case UserRole.AGENT:
         return [

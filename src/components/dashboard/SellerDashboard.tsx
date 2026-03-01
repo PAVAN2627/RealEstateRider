@@ -10,6 +10,7 @@ import LoadingSpinner from '@/components/shared/LoadingSpinner';
 import ErrorMessage from '@/components/shared/ErrorMessage';
 import { Property } from '@/types/property.types';
 import PropertyDetailsModal from '@/components/property/PropertyDetailsModal';
+import PlatformChatbot from '@/components/chatbot/PlatformChatbot';
 import * as propertyService from '@/services/propertyService';
 import * as inquiryService from '@/services/inquiryService';
 
@@ -138,24 +139,25 @@ const SellerDashboard = () => {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Welcome Section */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold font-heading text-foreground">
-            Welcome back, {user?.profile?.name || 'Seller'} 🏠
-          </h1>
-          <p className="text-muted-foreground mt-1">
-            Manage your property listings and track performance
-          </p>
+    <>
+      <div className="space-y-6">
+        {/* Welcome Section */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold font-heading text-foreground">
+              Welcome back, {user?.profile?.name || 'Seller'} 🏠
+            </h1>
+            <p className="text-muted-foreground mt-1">
+              Manage your property listings and track performance
+            </p>
+          </div>
+          <Button asChild className="gap-2">
+            <Link to="/properties/new">
+              <PlusCircle className="w-4 h-4" />
+              Add Property
+            </Link>
+          </Button>
         </div>
-        <Button asChild className="gap-2">
-          <Link to="/properties/new">
-            <PlusCircle className="w-4 h-4" />
-            Add Property
-          </Link>
-        </Button>
-      </div>
 
       {/* Analytics Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -293,7 +295,9 @@ const SellerDashboard = () => {
         open={isModalOpen}
         onClose={handleCloseModal}
       />
-    </div>
+      </div>
+      <PlatformChatbot />
+    </>
   );
 };
 

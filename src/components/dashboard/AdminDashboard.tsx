@@ -8,6 +8,7 @@ import LoadingSpinner from '@/components/shared/LoadingSpinner';
 import ErrorMessage from '@/components/shared/ErrorMessage';
 import { VerificationStatus as UserVerificationStatus } from '@/types/user.types';
 import { ActivityLog } from '@/types/notification.types';
+import PlatformChatbot from '@/components/chatbot/PlatformChatbot';
 import * as userService from '@/services/userService';
 import * as propertyService from '@/services/propertyService';
 import * as activityLogService from '@/services/activityLogService';
@@ -119,16 +120,17 @@ const AdminDashboard = () => {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Welcome Section */}
-      <div>
-        <h1 className="text-2xl font-bold font-heading text-foreground">
-          Admin Dashboard 👑
-        </h1>
-        <p className="text-muted-foreground mt-1">
-          Platform overview and management
-        </p>
-      </div>
+    <>
+      <div className="space-y-6">
+        {/* Welcome Section */}
+        <div>
+          <h1 className="text-2xl font-bold font-heading text-foreground">
+            Admin Dashboard 👑
+          </h1>
+          <p className="text-muted-foreground mt-1">
+            Platform overview and management
+          </p>
+        </div>
 
       {/* Analytics Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -303,7 +305,9 @@ const AdminDashboard = () => {
           </CardContent>
         </Card>
       )}
-    </div>
+      </div>
+      <PlatformChatbot />
+    </>
   );
 };
 

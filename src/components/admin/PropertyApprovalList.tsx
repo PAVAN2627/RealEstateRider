@@ -11,6 +11,8 @@
 import React, { useState, useEffect } from 'react';
 import { Property } from '../../types/property.types';
 import { getProperties, approveProperty, rejectProperty } from '../../services/propertyService';
+import { getUserById } from '../../services/userService';
+import { sendPropertyApprovalEmail, sendPropertyRejectionEmail } from '../../services/emailService';
 import LoadingSpinner from '../shared/LoadingSpinner';
 import ErrorMessage from '../shared/ErrorMessage';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
@@ -111,6 +113,23 @@ export default function PropertyApprovalList() {
       setActionLoading(property.id);
       await approveProperty(property.id, user.uid);
       
+      // Get property owner details and send email
+      try {
+        const owner = await getUserById(property.ownerId);
+        if (owner && owner.email) {
+          await sendPropertyApprovalEmail(
+            owner.email,
+            owner.profile?.name || 'User',
+            property.title,
+            property.id
+          );
+          console.log('✅ Property approval email sent');
+        }
+      } catch (emailError) {
+        console.error('Failed to send approval email:', emailError);
+        // Don't fail the approval if email fails
+      }
+      
       toast({
         title: 'Property Approved',
         description: `${property.title} has been approved successfully.`,
@@ -153,6 +172,23 @@ export default function PropertyApprovalList() {
     try {
       setActionLoading(property.id);
       await rejectProperty(property.id, user.uid, rejectionReason.trim());
+      
+      // Get property owner details and send email
+      try {
+        const owner = await getUserById(property.ownerId);
+        if (owner && owner.email) {
+          await sendPropertyRejectionEmail(
+            owner.email,
+            owner.profile?.name || 'User',
+            property.title,
+            rejectionReason.trim()
+          );
+          console.log('✅ Property rejection email sent');
+        }
+      } catch (emailError) {
+        console.error('Failed to send rejection email:', emailError);
+        // Don't fail the rejection if email fails
+      }
       
       toast({
         title: 'Property Rejected',

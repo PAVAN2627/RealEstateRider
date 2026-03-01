@@ -81,7 +81,7 @@ const ReceivedInquiriesPage = () => {
           { to: '/properties', label: 'Browse Properties', icon: Home },
           { to: '/wishlist', label: 'Wishlist', icon: Heart },
           { to: '/my-inquiries', label: 'My Inquiries', icon: MessageSquare },
-          { to: '/settings', label: 'Settings', icon: Settings },
+          { to: '/profile', label: 'Profile', icon: User },
         ];
       case UserRole.SELLER:
         return [
@@ -89,7 +89,7 @@ const ReceivedInquiriesPage = () => {
           { to: '/my-properties', label: 'My Properties', icon: Home },
           { to: '/properties/new', label: 'Add Property', icon: Home },
           { to: '/received-inquiries', label: 'Inquiries', icon: MessageSquare },
-          { to: '/settings', label: 'Settings', icon: Settings },
+          { to: '/profile', label: 'Profile', icon: User },
         ];
       case UserRole.AGENT:
         return [

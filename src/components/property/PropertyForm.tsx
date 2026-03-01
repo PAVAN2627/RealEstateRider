@@ -51,6 +51,7 @@ interface FormData {
   address: string;
   city: string;
   state: string;
+  pincode: string;
   latitude: string;
   longitude: string;
   availabilityStatus: AvailabilityStatus;
@@ -64,9 +65,11 @@ interface FormErrors {
   description?: string;
   price?: string;
   propertyType?: string;
+  configuration?: string;
   address?: string;
   city?: string;
   state?: string;
+  pincode?: string;
   images?: string;
   coordinates?: string;
 }
@@ -105,6 +108,7 @@ export default function PropertyForm({ property, onSuccess, onCancel, mode, show
     address: property?.location.address || '',
     city: property?.location.city || '',
     state: property?.location.state || '',
+    pincode: property?.location.pincode || '',
     latitude: property?.location.coordinates?.lat.toString() || '',
     longitude: property?.location.coordinates?.lng.toString() || '',
     availabilityStatus: property?.availabilityStatus || AvailabilityStatus.AVAILABLE,
@@ -119,51 +123,63 @@ export default function PropertyForm({ property, onSuccess, onCancel, mode, show
   const [success, setSuccess] = useState(false);
   const [locationLoading, setLocationLoading] = useState(false);
   const [locationError, setLocationError] = useState<string | null>(null);
+  const [showMap, setShowMap] = useState(false);
+  const [mapCenter, setMapCenter] = useState<{ lat: number; lng: number } | null>(null);
 
   /**
-   * Request user's current location
+   * Geocode address to get coordinates
    */
-  const requestLocation = () => {
-    if (!navigator.geolocation) {
-      setLocationError('Geolocation is not supported by your browser');
+  const geocodeAddress = async () => {
+    const address = `${formData.address}, ${formData.city}, ${formData.state}, ${formData.pincode}, India`;
+    
+    if (!formData.address || !formData.city || !formData.state || !formData.pincode) {
+      setLocationError('Please enter address, city, state, and pincode first');
       return;
     }
 
     setLocationLoading(true);
     setLocationError(null);
 
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
+    try {
+      const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+      const response = await fetch(
+        `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${apiKey}`
+      );
+      
+      const data = await response.json();
+      
+      if (data.status === 'OK' && data.results && data.results[0]) {
+        const location = data.results[0].geometry.location;
         setFormData(prev => ({
           ...prev,
-          latitude: position.coords.latitude.toFixed(6),
-          longitude: position.coords.longitude.toFixed(6),
+          latitude: location.lat.toFixed(6),
+          longitude: location.lng.toFixed(6),
         }));
+        setMapCenter({ lat: location.lat, lng: location.lng });
+        setShowMap(true);
         setLocationLoading(false);
         setErrors(prev => ({ ...prev, coordinates: undefined }));
-      },
-      (error) => {
+      } else {
+        setLocationError(`Could not find coordinates for this address. Status: ${data.status}`);
         setLocationLoading(false);
-        switch (error.code) {
-          case error.PERMISSION_DENIED:
-            setLocationError('Location permission denied. Please enable location access in your browser settings.');
-            break;
-          case error.POSITION_UNAVAILABLE:
-            setLocationError('Location information unavailable.');
-            break;
-          case error.TIMEOUT:
-            setLocationError('Location request timed out.');
-            break;
-          default:
-            setLocationError('An unknown error occurred while getting location.');
-        }
-      },
-      {
-        enableHighAccuracy: true,
-        timeout: 10000,
-        maximumAge: 0,
       }
-    );
+    } catch (error) {
+      console.error('Geocoding error:', error);
+      setLocationError('Failed to get coordinates. Please try again.');
+      setLocationLoading(false);
+    }
+  };
+
+  /**
+   * Handle map click to pick coordinates
+   */
+  const handleMapClick = (lat: number, lng: number) => {
+    setFormData(prev => ({
+      ...prev,
+      latitude: lat.toFixed(6),
+      longitude: lng.toFixed(6),
+    }));
+    setMapCenter({ lat, lng });
   };
 
   /**
@@ -198,6 +214,10 @@ export default function PropertyForm({ property, onSuccess, onCancel, mode, show
       newErrors.propertyType = 'Property type is required';
     }
 
+    if (!formData.configuration) {
+      newErrors.configuration = 'Property configuration is required';
+    }
+
     if (!formData.address.trim()) {
       newErrors.address = 'Address is required';
     }
@@ -208,6 +228,16 @@ export default function PropertyForm({ property, onSuccess, onCancel, mode, show
 
     if (!formData.state.trim()) {
       newErrors.state = 'State is required';
+    }
+
+    // Pincode validation (required)
+    if (!formData.pincode.trim()) {
+      newErrors.pincode = 'Pincode is required';
+    } else {
+      const pincodeRegex = /^[1-9][0-9]{5}$/;
+      if (!pincodeRegex.test(formData.pincode.trim())) {
+        newErrors.pincode = 'Invalid pincode format (must be 6 digits)';
+      }
     }
 
     // Image validation (max 10 images)
@@ -269,11 +299,18 @@ export default function PropertyForm({ property, onSuccess, onCancel, mode, show
   };
 
   /**
-   * Handle image upload
+   * Handle image files selected
    */
-  const handleImageUpload = async (files: File[]) => {
-    setImageFiles(prev => [...prev, ...files]);
+  const handleImageFilesSelected = (files: File[]) => {
+    setImageFiles(files);
     setErrors(prev => ({ ...prev, images: undefined }));
+  };
+
+  /**
+   * Handle remove selected image file
+   */
+  const handleRemoveSelectedImage = (index: number) => {
+    setImageFiles(prev => prev.filter((_, i) => i !== index));
   };
 
   /**
@@ -353,11 +390,13 @@ export default function PropertyForm({ property, onSuccess, onCancel, mode, show
         address: string;
         city: string;
         state: string;
+        pincode: string;
         coordinates?: { lat: number; lng: number };
       } = {
         address: formData.address.trim(),
         city: formData.city.trim(),
         state: formData.state.trim(),
+        pincode: formData.pincode.trim(),
       };
 
       // Only add coordinates if both lat and lng are provided
@@ -375,16 +414,12 @@ export default function PropertyForm({ property, onSuccess, onCancel, mode, show
           description: formData.description.trim(),
           price: parseFloat(formData.price),
           propertyType: formData.propertyType as PropertyType,
+          configuration: formData.configuration as PropertyConfiguration,
           location,
           availabilityStatus: formData.availabilityStatus,
           imageUrls: allImageUrls,
           ownershipDocumentUrls,
         };
-        
-        // Add configuration if selected
-        if (formData.configuration) {
-          updateData.configuration = formData.configuration as PropertyConfiguration;
-        }
         
         await updateProperty(property.id, updateData, user.uid);
       } else {
@@ -394,6 +429,7 @@ export default function PropertyForm({ property, onSuccess, onCancel, mode, show
           description: formData.description.trim(),
           price: parseFloat(formData.price),
           propertyType: formData.propertyType as PropertyType,
+          configuration: formData.configuration as PropertyConfiguration,
           location,
           availabilityStatus: formData.availabilityStatus,
           imageUrls: allImageUrls,
@@ -401,11 +437,6 @@ export default function PropertyForm({ property, onSuccess, onCancel, mode, show
           ownerId: user.uid,
           ownerRole: user.role === 'agent' ? 'agent' : 'seller',
         };
-        
-        // Add configuration if selected
-        if (formData.configuration) {
-          propertyData.configuration = formData.configuration as PropertyConfiguration;
-        }
 
         // Only add agentId if user is an agent
         if (user.role === 'agent') {
@@ -558,7 +589,7 @@ export default function PropertyForm({ property, onSuccess, onCancel, mode, show
         {/* Configuration (BHK Type) */}
         <div className="space-y-2">
           <Label htmlFor="configuration">
-            Property Configuration (Optional)
+            Property Configuration <span className="text-red-500">*</span>
           </Label>
           <Select
             value={formData.configuration}
@@ -581,8 +612,11 @@ export default function PropertyForm({ property, onSuccess, onCancel, mode, show
               <SelectItem value={PropertyConfiguration.NOT_APPLICABLE}>N/A</SelectItem>
             </SelectContent>
           </Select>
+          {errors.configuration && (
+            <p className="text-sm text-red-500">{errors.configuration}</p>
+          )}
           <p className="text-sm text-muted-foreground">
-            Select the property configuration (e.g., 1BHK, 2BHK) if applicable
+            Select the property configuration. Choose "N/A" if not applicable (e.g., for land or commercial properties)
           </p>
         </div>
 
@@ -633,7 +667,7 @@ export default function PropertyForm({ property, onSuccess, onCancel, mode, show
         </div>
 
         {/* City and State Row */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {/* City */}
           <div className="space-y-2">
             <Label htmlFor="city">
@@ -665,6 +699,23 @@ export default function PropertyForm({ property, onSuccess, onCancel, mode, show
             />
             {errors.state && <p className="text-sm text-red-500">{errors.state}</p>}
           </div>
+
+          {/* Pincode */}
+          <div className="space-y-2">
+            <Label htmlFor="pincode">
+              Pincode <span className="text-red-500">*</span>
+            </Label>
+            <Input
+              id="pincode"
+              name="pincode"
+              value={formData.pincode}
+              onChange={handleInputChange}
+              placeholder="e.g., 400001"
+              disabled={submitting}
+              maxLength={6}
+            />
+            {errors.pincode && <p className="text-sm text-red-500">{errors.pincode}</p>}
+          </div>
         </div>
 
         {/* Coordinates (Optional) */}
@@ -675,43 +726,104 @@ export default function PropertyForm({ property, onSuccess, onCancel, mode, show
               type="button"
               variant="outline"
               size="sm"
-              onClick={requestLocation}
+              onClick={geocodeAddress}
               disabled={locationLoading || submitting}
             >
-              {locationLoading ? 'Getting Location...' : 'Use My Current Location'}
+              {locationLoading ? 'Getting Coordinates...' : 'Get Coordinates from Address'}
             </Button>
           </div>
           <p className="text-sm text-muted-foreground">
-            Allow location access to automatically fill coordinates. This helps buyers see how far the property is from them.
+            Enter the property address, city, state, and pincode above, then click the button to automatically get coordinates for the property location.
           </p>
           {locationError && (
             <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 px-3 py-2 rounded text-sm">
               {locationError}
             </div>
           )}
+          
+          {/* Interactive Map */}
+          {showMap && mapCenter && (
+            <div className="space-y-2">
+              <div className="border rounded-lg overflow-hidden">
+                <div className="bg-blue-50 border-b border-blue-200 px-3 py-2">
+                  <p className="text-sm text-blue-800">
+                    📍 Click on the map to adjust the exact property location
+                  </p>
+                </div>
+                <div 
+                  className="relative w-full h-96 bg-gray-100"
+                  style={{ cursor: 'crosshair' }}
+                >
+                  <iframe
+                    width="100%"
+                    height="100%"
+                    style={{ border: 0 }}
+                    loading="lazy"
+                    src={`https://www.google.com/maps/embed/v1/place?key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY}&q=${mapCenter.lat},${mapCenter.lng}&zoom=16`}
+                  />
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowMap(false)}
+                >
+                  Hide Map
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    const lat = parseFloat(formData.latitude);
+                    const lng = parseFloat(formData.longitude);
+                    if (!isNaN(lat) && !isNaN(lng)) {
+                      window.open(`https://www.google.com/maps?q=${lat},${lng}`, '_blank');
+                    }
+                  }}
+                >
+                  Open in Google Maps
+                </Button>
+              </div>
+            </div>
+          )}
+          
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Input
-              name="latitude"
-              value={formData.latitude}
-              onChange={handleInputChange}
-              placeholder="Latitude (e.g., 19.0760)"
-              disabled={submitting}
-              type="number"
-              step="any"
-            />
-            <Input
-              name="longitude"
-              value={formData.longitude}
-              onChange={handleInputChange}
-              placeholder="Longitude (e.g., 72.8777)"
-              disabled={submitting}
-              type="number"
-              step="any"
-            />
+            <div className="space-y-2">
+              <Label htmlFor="latitude">Latitude</Label>
+              <Input
+                id="latitude"
+                name="latitude"
+                value={formData.latitude}
+                onChange={handleInputChange}
+                placeholder="Latitude (e.g., 19.0760)"
+                disabled={submitting}
+                type="number"
+                step="any"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="longitude">Longitude</Label>
+              <Input
+                id="longitude"
+                name="longitude"
+                value={formData.longitude}
+                onChange={handleInputChange}
+                placeholder="Longitude (e.g., 72.8777)"
+                disabled={submitting}
+                type="number"
+                step="any"
+              />
+            </div>
           </div>
           {errors.coordinates && (
             <p className="text-sm text-red-500">{errors.coordinates}</p>
           )}
+          <p className="text-xs text-muted-foreground">
+            You can manually adjust the coordinates by editing the values above or by clicking "Open in Google Maps" to find the exact location.
+          </p>
         </div>
       </div>
 
@@ -721,14 +833,16 @@ export default function PropertyForm({ property, onSuccess, onCancel, mode, show
           Property Images <span className="text-red-500">*</span>
         </h3>
         <p className="text-sm text-muted-foreground">
-          Upload up to 10 high-quality images of your property (max 5MB each)
+          Select up to 10 high-quality images of your property (max 5MB each). Images will be uploaded when you submit the form.
         </p>
         <ImageUpload
-          onUpload={handleImageUpload}
+          onFilesSelected={handleImageFilesSelected}
+          selectedFiles={imageFiles}
           maxFiles={10}
           maxSizeMB={5}
           existingImages={existingImages}
           onRemoveExisting={handleRemoveExistingImage}
+          onRemoveSelected={handleRemoveSelectedImage}
         />
         {errors.images && <p className="text-sm text-red-500">{errors.images}</p>}
       </div>
