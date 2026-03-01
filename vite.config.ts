@@ -17,4 +17,16 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  build: {
+    // Ensure consistent chunk naming
+    rollupOptions: {
+      output: {
+        manualChunks: undefined,
+      },
+    },
+    // Generate source maps for better debugging
+    sourcemap: false,
+    // Increase chunk size warning limit
+    chunkSizeWarningLimit: 1000,
+  },
 }));

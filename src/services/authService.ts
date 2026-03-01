@@ -150,49 +150,59 @@ export async function signInWithGoogle(): Promise<User> {
   
   // Configure provider for better UX
   provider.setCustomParameters({
-    prompt: 'select_account' // Always show account selection
+    prompt: 'select_account', // Always show account selection
+    // Add these to help with popup issues
+    display: 'popup',
   });
 
   let userCredential;
   let retryCount = 0;
-  const maxRetries = 1; // Allow one automatic retry
+  const maxRetries = 2; // Allow two automatic retries
 
   while (retryCount <= maxRetries) {
     try {
       userCredential = await signInWithPopup(auth, provider);
       break; // Success, exit loop
     } catch (popupError: any) {
-      // On first attempt, if we get cancelled-popup-request or internal-error, retry silently
-      if (retryCount === 0 && 
+      console.log(`Sign-in attempt ${retryCount + 1} failed:`, popupError.code, popupError.message);
+      
+      // On first two attempts, if we get specific errors, retry silently
+      if (retryCount < maxRetries && 
           (popupError.code === 'auth/cancelled-popup-request' || 
            popupError.code === 'auth/internal-error' ||
            popupError.message?.includes('INTERNAL ASSERTION FAILED'))) {
-        console.log('First attempt failed, retrying automatically...');
+        console.log('Retrying automatically...');
         retryCount++;
-        // Small delay before retry
-        await new Promise(resolve => setTimeout(resolve, 500));
+        // Slightly longer delay before retry
+        await new Promise(resolve => setTimeout(resolve, 800));
         continue;
       }
 
       // Handle user-initiated cancellations (don't retry)
       if (popupError.code === 'auth/popup-closed-by-user') {
-        throw new Error('Sign-in window was closed. Please try again and complete the sign-in process.');
+        throw new Error('Sign-in window was closed before completing. Please click "Sign in with Google" again and select your account in the popup.');
       } else if (popupError.code === 'auth/popup-blocked') {
         throw new Error('Popup was blocked by your browser. Please allow popups for this site and try again.');
       } else if (popupError.code === 'auth/network-request-failed') {
         throw new Error('Network error. Please check your internet connection and try again.');
       } else if (popupError.code === 'auth/unauthorized-domain') {
-        throw new Error('This domain is not authorized. Please contact support.');
+        throw new Error('⚠️ Domain not authorized! Admin: Add this domain to Firebase Console → Authentication → Authorized domains');
+      } else if (popupError.code === 'auth/operation-not-allowed') {
+        throw new Error('Google Sign-In is not enabled. Please contact support.');
       }
       
       // If we've already retried or it's a different error, throw it
+      if (retryCount >= maxRetries) {
+        throw new Error('Sign-in failed after multiple attempts. Please refresh the page and try again.');
+      }
+      
       throw popupError;
     }
   }
 
   // If we exhausted retries without success
   if (!userCredential) {
-    throw new Error('Sign-in failed after retry. Please refresh the page and try again.');
+    throw new Error('Sign-in failed. Please refresh the page and try again.');
   }
 
   try {

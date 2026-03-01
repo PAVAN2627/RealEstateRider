@@ -66,6 +66,20 @@ VITE_ADMIN_SECRET_KEY=
 3. **Gemini AI**: [makersuite.google.com](https://makersuite.google.com/app/apikey)
 4. **Email Service**: Deploy `Code.gs` to [script.google.com](https://script.google.com/)
 
+### Firebase Setup (Important!)
+
+After creating your Firebase project, you MUST add your domain to authorized domains:
+
+1. Go to [Firebase Console](https://console.firebase.google.com/)
+2. Select your project
+3. Go to **Authentication** → **Settings** → **Authorized domains**
+4. Add your domains:
+   - `localhost` (for development)
+   - `your-app.vercel.app` (for production)
+   - Any custom domains
+
+**Without this, Google Sign-In will fail with popup errors!**
+
 ## Email Service Setup
 
 1. Open [Google Apps Script](https://script.google.com/)
