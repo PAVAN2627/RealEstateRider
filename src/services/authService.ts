@@ -147,6 +147,13 @@ export async function login(email: string, password: string): Promise<User> {
 export async function signInWithGoogle(): Promise<User> {
   try {
     const provider = new GoogleAuthProvider();
+    
+    // Configure provider for better UX
+    provider.setCustomParameters({
+      prompt: 'select_account' // Always show account selection
+    });
+
+    // Attempt sign-in with popup
     const userCredential = await signInWithPopup(auth, provider);
     const firebaseUser = userCredential.user;
 
@@ -205,6 +212,19 @@ export async function signInWithGoogle(): Promise<User> {
 
     return user;
   } catch (error: any) {
+    // Handle specific Firebase Auth errors
+    if (error.code === 'auth/popup-closed-by-user') {
+      throw new Error('Sign-in cancelled. Please try again.');
+    } else if (error.code === 'auth/popup-blocked') {
+      throw new Error('Popup blocked by browser. Please allow popups and try again.');
+    } else if (error.code === 'auth/cancelled-popup-request') {
+      throw new Error('Sign-in cancelled. Please try again.');
+    } else if (error.code === 'auth/network-request-failed') {
+      throw new Error('Network error. Please check your connection and try again.');
+    } else if (error.code === 'auth/internal-error') {
+      throw new Error('An error occurred. Please try again.');
+    }
+    
     throw new Error(`Google sign-in failed: ${error.message}`);
   }
 }

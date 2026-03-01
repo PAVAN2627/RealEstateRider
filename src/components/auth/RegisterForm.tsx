@@ -89,7 +89,23 @@ export default function RegisterForm() {
       }
     } catch (err) {
       console.error('Google sign-up error:', err);
-      setError(err instanceof Error ? err.message : 'Google sign-up failed. Please try again.');
+      
+      // Extract user-friendly error message
+      let errorMessage = 'Google sign-up failed. Please try again.';
+      
+      if (err instanceof Error) {
+        if (err.message.includes('cancelled') || err.message.includes('closed')) {
+          errorMessage = 'Sign-up was cancelled. Please complete the sign-up process.';
+        } else if (err.message.includes('popup blocked')) {
+          errorMessage = 'Popup was blocked. Please allow popups for this site and try again.';
+        } else if (err.message.includes('network')) {
+          errorMessage = 'Network error. Please check your internet connection.';
+        } else {
+          errorMessage = err.message;
+        }
+      }
+      
+      setError(errorMessage);
     } finally {
       setGoogleLoading(false);
     }

@@ -92,7 +92,24 @@ export default function LoginForm() {
       navigate('/dashboard');
     } catch (err) {
       console.error('Google sign-in error:', err);
-      const errorMessage = err instanceof Error ? err.message : 'Google sign-in failed. Please try again.';
+      
+      // Extract user-friendly error message
+      let errorMessage = 'Google sign-in failed. Please try again.';
+      
+      if (err instanceof Error) {
+        if (err.message.includes('cancelled') || err.message.includes('closed')) {
+          errorMessage = 'Sign-in was cancelled. Please complete the sign-in process.';
+        } else if (err.message.includes('popup blocked')) {
+          errorMessage = 'Popup was blocked. Please allow popups for this site and try again.';
+        } else if (err.message.includes('network')) {
+          errorMessage = 'Network error. Please check your internet connection.';
+        } else if (err.message.includes('denied')) {
+          errorMessage = err.message; // Use the specific denial message
+        } else {
+          errorMessage = err.message;
+        }
+      }
+      
       setError(errorMessage);
     } finally {
       setGoogleLoading(false);
