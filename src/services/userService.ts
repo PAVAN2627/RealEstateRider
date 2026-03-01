@@ -28,6 +28,7 @@ import { createNotification } from './notificationService';
 import { NotificationType } from '../types/notification.types';
 import { logActivity } from './activityLogService';
 import { cascadeDeleteUser } from './cascadingDeleteService';
+import { getAgentProfile, updateAgentProfile } from './agentProfileService';
 
 /**
  * Creates a user document in Firestore
@@ -119,10 +120,26 @@ export async function updateVerificationStatus(
   adminId: string
 ): Promise<void> {
   try {
+    // Get user to check their role
+    const user = await getUserById(userId);
+    if (!user) {
+      throw new Error('User not found');
+    }
+
     const userRef = doc(db, 'users', userId);
     await updateDoc(userRef, {
       verificationStatus: status,
     });
+
+    // If user is an agent, also update their agent profile verified status
+    if (user.role === UserRole.AGENT) {
+      const agentProfile = await getAgentProfile(userId);
+      if (agentProfile) {
+        await updateAgentProfile(agentProfile.id, {
+          verified: status === VerificationStatus.APPROVED
+        });
+      }
+    }
 
     // Create notification for user based on status change
     // Requirement 15.4: Trigger notification when admin approves/rejects user account

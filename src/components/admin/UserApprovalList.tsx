@@ -33,6 +33,7 @@ import {
 } from '../ui/dialog';
 import { UserCheck, UserX, FileText, Calendar, Mail, Users } from 'lucide-react';
 import { useToast } from '../ui/use-toast';
+import { useAuth } from '../../context/AuthContext';
 
 /**
  * UserApprovalList Component
@@ -60,6 +61,7 @@ export default function UserApprovalList() {
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   
   const { toast } = useToast();
+  const { user: currentUser } = useAuth();
 
   /**
    * Fetch all users with pending verification status
@@ -106,19 +108,32 @@ export default function UserApprovalList() {
    * Handle approve user action
    */
   const handleApprove = async (user: User) => {
+    if (!currentUser) {
+      toast({
+        title: 'Authentication Error',
+        description: 'You must be logged in to approve users.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     try {
       setActionLoading(user.uid);
-      await updateVerificationStatus(user.uid, VerificationStatus.APPROVED);
+      await updateVerificationStatus(user.uid, VerificationStatus.APPROVED, currentUser.uid);
+      
+      // Immediately remove from local state for better UX
+      setUsers(prevUsers => prevUsers.filter(u => u.uid !== user.uid));
       
       toast({
         title: 'User Approved',
         description: `${user.profile.name} has been approved successfully.`,
       });
       
-      // Refresh the list
-      await fetchPendingUsers();
       setApproveDialogOpen(false);
       setSelectedUser(null);
+      
+      // Refresh the list from server to ensure consistency
+      await fetchPendingUsers();
     } catch (err) {
       console.error('Error approving user:', err);
       toast({
@@ -126,6 +141,8 @@ export default function UserApprovalList() {
         description: 'Failed to approve user. Please try again.',
         variant: 'destructive',
       });
+      // Refresh list to restore correct state after error
+      await fetchPendingUsers();
     } finally {
       setActionLoading(null);
     }
@@ -135,19 +152,32 @@ export default function UserApprovalList() {
    * Handle reject user action
    */
   const handleReject = async (user: User) => {
+    if (!currentUser) {
+      toast({
+        title: 'Authentication Error',
+        description: 'You must be logged in to reject users.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     try {
       setActionLoading(user.uid);
-      await updateVerificationStatus(user.uid, VerificationStatus.REJECTED);
+      await updateVerificationStatus(user.uid, VerificationStatus.REJECTED, currentUser.uid);
+      
+      // Immediately remove from local state for better UX
+      setUsers(prevUsers => prevUsers.filter(u => u.uid !== user.uid));
       
       toast({
         title: 'User Rejected',
         description: `${user.profile.name} has been rejected.`,
       });
       
-      // Refresh the list
-      await fetchPendingUsers();
       setRejectDialogOpen(false);
       setSelectedUser(null);
+      
+      // Refresh the list from server to ensure consistency
+      await fetchPendingUsers();
     } catch (err) {
       console.error('Error rejecting user:', err);
       toast({
@@ -155,6 +185,8 @@ export default function UserApprovalList() {
         description: 'Failed to reject user. Please try again.',
         variant: 'destructive',
       });
+      // Refresh list to restore correct state after error
+      await fetchPendingUsers();
     } finally {
       setActionLoading(null);
     }
