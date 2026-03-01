@@ -221,7 +221,7 @@ export default function LoginForm() {
             {googleLoading ? (
               <>
                 <LoadingSpinner size="sm" />
-                <span className="ml-2">Signing in with Google...</span>
+                <span className="ml-2">Connecting to Google...</span>
               </>
             ) : (
               <>
@@ -247,6 +247,13 @@ export default function LoginForm() {
               </>
             )}
           </Button>
+
+          {/* Helpful tip for Google Sign-In */}
+          {googleLoading && (
+            <p className="text-xs text-center text-muted-foreground">
+              Please complete the sign-in in the popup window
+            </p>
+          )}
 
           {/* Register Link */}
           <p className="text-sm text-center text-muted-foreground">

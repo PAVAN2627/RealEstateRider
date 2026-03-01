@@ -138,7 +138,7 @@ export async function login(email: string, password: string): Promise<User> {
 /**
  * Sign in with Google
  * Authenticates user with Google OAuth and creates/retrieves user document
- * Uses popup with fallback to redirect for better reliability
+ * Implements automatic retry on first attempt failure (common Firebase issue)
  * 
  * @returns Promise<User> - Authenticated user object
  * @throws Error if Google sign-in fails
@@ -146,34 +146,56 @@ export async function login(email: string, password: string): Promise<User> {
  * Requirement: Google OAuth authentication
  */
 export async function signInWithGoogle(): Promise<User> {
-  try {
-    const provider = new GoogleAuthProvider();
-    
-    // Configure provider for better UX
-    provider.setCustomParameters({
-      prompt: 'select_account' // Always show account selection
-    });
+  const provider = new GoogleAuthProvider();
+  
+  // Configure provider for better UX
+  provider.setCustomParameters({
+    prompt: 'select_account' // Always show account selection
+  });
 
-    let userCredential;
-    
+  let userCredential;
+  let retryCount = 0;
+  const maxRetries = 1; // Allow one automatic retry
+
+  while (retryCount <= maxRetries) {
     try {
-      // Try popup first (better UX)
       userCredential = await signInWithPopup(auth, provider);
+      break; // Success, exit loop
     } catch (popupError: any) {
-      // If popup fails due to being closed or blocked, throw a clear error
-      // Don't retry automatically - let user click again
+      // On first attempt, if we get cancelled-popup-request or internal-error, retry silently
+      if (retryCount === 0 && 
+          (popupError.code === 'auth/cancelled-popup-request' || 
+           popupError.code === 'auth/internal-error' ||
+           popupError.message?.includes('INTERNAL ASSERTION FAILED'))) {
+        console.log('First attempt failed, retrying automatically...');
+        retryCount++;
+        // Small delay before retry
+        await new Promise(resolve => setTimeout(resolve, 500));
+        continue;
+      }
+
+      // Handle user-initiated cancellations (don't retry)
       if (popupError.code === 'auth/popup-closed-by-user') {
         throw new Error('Sign-in window was closed. Please try again and complete the sign-in process.');
       } else if (popupError.code === 'auth/popup-blocked') {
         throw new Error('Popup was blocked by your browser. Please allow popups for this site and try again.');
-      } else if (popupError.code === 'auth/cancelled-popup-request') {
-        // This happens when a new popup is triggered before the previous one completes
-        throw new Error('A sign-in is already in progress. Please wait or refresh the page.');
+      } else if (popupError.code === 'auth/network-request-failed') {
+        throw new Error('Network error. Please check your internet connection and try again.');
+      } else if (popupError.code === 'auth/unauthorized-domain') {
+        throw new Error('This domain is not authorized. Please contact support.');
       }
-      // Re-throw other errors
+      
+      // If we've already retried or it's a different error, throw it
       throw popupError;
     }
+  }
 
+  // If we exhausted retries without success
+  if (!userCredential) {
+    throw new Error('Sign-in failed after retry. Please refresh the page and try again.');
+  }
+
+  try {
     const firebaseUser = userCredential.user;
 
     // Check if user document exists
@@ -231,22 +253,7 @@ export async function signInWithGoogle(): Promise<User> {
 
     return user;
   } catch (error: any) {
-    // Handle specific Firebase Auth errors with user-friendly messages
-    if (error.code === 'auth/popup-closed-by-user') {
-      throw new Error('Sign-in window was closed. Please try again and complete the sign-in process.');
-    } else if (error.code === 'auth/popup-blocked') {
-      throw new Error('Popup was blocked by your browser. Please allow popups for this site and try again.');
-    } else if (error.code === 'auth/cancelled-popup-request') {
-      throw new Error('A sign-in is already in progress. Please wait a moment and try again.');
-    } else if (error.code === 'auth/network-request-failed') {
-      throw new Error('Network error. Please check your internet connection and try again.');
-    } else if (error.code === 'auth/internal-error') {
-      throw new Error('An error occurred. Please refresh the page and try again.');
-    } else if (error.code === 'auth/unauthorized-domain') {
-      throw new Error('This domain is not authorized. Please contact support.');
-    }
-    
-    // If error already has a message we set, use it
+    // Handle errors during user document operations
     if (error.message && !error.message.includes('Firebase:')) {
       throw error;
     }
