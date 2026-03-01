@@ -39,6 +39,7 @@ export default function LoginForm() {
   const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<{ email?: string; password?: string }>({});
+  const [lastGoogleAttempt, setLastGoogleAttempt] = useState<number>(0);
 
   const validateForm = (): boolean => {
     const errors: { email?: string; password?: string } = {};
@@ -84,6 +85,14 @@ export default function LoginForm() {
   };
 
   const handleGoogleSignIn = async () => {
+    // Prevent multiple simultaneous attempts (debounce)
+    const now = Date.now();
+    if (now - lastGoogleAttempt < 2000) {
+      setError('Please wait a moment before trying again.');
+      return;
+    }
+    setLastGoogleAttempt(now);
+
     setGoogleLoading(true);
     setError(null);
 
@@ -97,14 +106,18 @@ export default function LoginForm() {
       let errorMessage = 'Google sign-in failed. Please try again.';
       
       if (err instanceof Error) {
-        if (err.message.includes('cancelled') || err.message.includes('closed')) {
-          errorMessage = 'Sign-in was cancelled. Please complete the sign-in process.';
-        } else if (err.message.includes('popup blocked')) {
-          errorMessage = 'Popup was blocked. Please allow popups for this site and try again.';
+        if (err.message.includes('closed') || err.message.includes('cancelled')) {
+          errorMessage = 'Sign-in window was closed. Please click the button again and complete the sign-in.';
+        } else if (err.message.includes('popup blocked') || err.message.includes('blocked')) {
+          errorMessage = 'Popup was blocked. Please allow popups for this site in your browser settings.';
+        } else if (err.message.includes('already in progress')) {
+          errorMessage = 'A sign-in is already in progress. Please wait a moment and try again.';
         } else if (err.message.includes('network')) {
           errorMessage = 'Network error. Please check your internet connection.';
         } else if (err.message.includes('denied')) {
           errorMessage = err.message; // Use the specific denial message
+        } else if (err.message.includes('refresh')) {
+          errorMessage = err.message; // Use the refresh message
         } else {
           errorMessage = err.message;
         }

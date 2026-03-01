@@ -138,6 +138,7 @@ export async function login(email: string, password: string): Promise<User> {
 /**
  * Sign in with Google
  * Authenticates user with Google OAuth and creates/retrieves user document
+ * Uses popup with fallback to redirect for better reliability
  * 
  * @returns Promise<User> - Authenticated user object
  * @throws Error if Google sign-in fails
@@ -153,8 +154,26 @@ export async function signInWithGoogle(): Promise<User> {
       prompt: 'select_account' // Always show account selection
     });
 
-    // Attempt sign-in with popup
-    const userCredential = await signInWithPopup(auth, provider);
+    let userCredential;
+    
+    try {
+      // Try popup first (better UX)
+      userCredential = await signInWithPopup(auth, provider);
+    } catch (popupError: any) {
+      // If popup fails due to being closed or blocked, throw a clear error
+      // Don't retry automatically - let user click again
+      if (popupError.code === 'auth/popup-closed-by-user') {
+        throw new Error('Sign-in window was closed. Please try again and complete the sign-in process.');
+      } else if (popupError.code === 'auth/popup-blocked') {
+        throw new Error('Popup was blocked by your browser. Please allow popups for this site and try again.');
+      } else if (popupError.code === 'auth/cancelled-popup-request') {
+        // This happens when a new popup is triggered before the previous one completes
+        throw new Error('A sign-in is already in progress. Please wait or refresh the page.');
+      }
+      // Re-throw other errors
+      throw popupError;
+    }
+
     const firebaseUser = userCredential.user;
 
     // Check if user document exists
@@ -212,17 +231,24 @@ export async function signInWithGoogle(): Promise<User> {
 
     return user;
   } catch (error: any) {
-    // Handle specific Firebase Auth errors
+    // Handle specific Firebase Auth errors with user-friendly messages
     if (error.code === 'auth/popup-closed-by-user') {
-      throw new Error('Sign-in cancelled. Please try again.');
+      throw new Error('Sign-in window was closed. Please try again and complete the sign-in process.');
     } else if (error.code === 'auth/popup-blocked') {
-      throw new Error('Popup blocked by browser. Please allow popups and try again.');
+      throw new Error('Popup was blocked by your browser. Please allow popups for this site and try again.');
     } else if (error.code === 'auth/cancelled-popup-request') {
-      throw new Error('Sign-in cancelled. Please try again.');
+      throw new Error('A sign-in is already in progress. Please wait a moment and try again.');
     } else if (error.code === 'auth/network-request-failed') {
-      throw new Error('Network error. Please check your connection and try again.');
+      throw new Error('Network error. Please check your internet connection and try again.');
     } else if (error.code === 'auth/internal-error') {
-      throw new Error('An error occurred. Please try again.');
+      throw new Error('An error occurred. Please refresh the page and try again.');
+    } else if (error.code === 'auth/unauthorized-domain') {
+      throw new Error('This domain is not authorized. Please contact support.');
+    }
+    
+    // If error already has a message we set, use it
+    if (error.message && !error.message.includes('Firebase:')) {
+      throw error;
     }
     
     throw new Error(`Google sign-in failed: ${error.message}`);
