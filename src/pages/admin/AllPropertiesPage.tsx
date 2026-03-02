@@ -17,7 +17,8 @@ import {
   Eye,
   CheckCircle,
   XCircle,
-  Clock
+  Clock,
+  Ban
 } from 'lucide-react';
 import { UserRole } from '@/types/user.types';
 import LoadingSpinner from '@/components/shared/LoadingSpinner';
@@ -25,6 +26,18 @@ import { Property } from '@/types/property.types';
 import * as propertyService from '@/services/propertyService';
 import PropertyDetailsModal from '@/components/property/PropertyDetailsModal';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { toast } from 'sonner';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { Textarea } from '@/components/ui/textarea';
 
 /**
  * AllPropertiesPage Component
@@ -39,6 +52,9 @@ const AllPropertiesPage = () => {
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('all');
+  const [actionProperty, setActionProperty] = useState<Property | null>(null);
+  const [actionType, setActionType] = useState<'approve' | 'reject' | 'suspend' | null>(null);
+  const [rejectionReason, setRejectionReason] = useState('');
 
   useEffect(() => {
     fetchProperties();
@@ -111,6 +127,65 @@ const AllPropertiesPage = () => {
   const handleCloseModal = () => {
     setIsModalOpen(false);
     setSelectedProperty(null);
+  };
+
+  const handleApprove = async (property: Property) => {
+    setActionProperty(property);
+    setActionType('approve');
+  };
+
+  const handleReject = async (property: Property) => {
+    setActionProperty(property);
+    setActionType('reject');
+    setRejectionReason('');
+  };
+
+  const handleSuspend = async (property: Property) => {
+    setActionProperty(property);
+    setActionType('suspend');
+    setRejectionReason('');
+  };
+
+  const confirmAction = async () => {
+    if (!actionProperty || !actionType) return;
+
+    try {
+      if (actionType === 'approve') {
+        await propertyService.approveProperty(actionProperty.id!);
+        toast.success('Property approved successfully');
+      } else if (actionType === 'reject') {
+        if (!rejectionReason.trim()) {
+          toast.error('Please provide a reason for rejection');
+          return;
+        }
+        await propertyService.rejectProperty(actionProperty.id!, rejectionReason);
+        toast.success('Property rejected');
+      } else if (actionType === 'suspend') {
+        if (!rejectionReason.trim()) {
+          toast.error('Please provide a reason for suspension');
+          return;
+        }
+        await propertyService.rejectProperty(actionProperty.id!, rejectionReason);
+        toast.success('Property suspended');
+      }
+
+      // Refresh properties list
+      await fetchProperties();
+      
+      // Close dialog
+      setActionProperty(null);
+      setActionType(null);
+      setRejectionReason('');
+    } catch (error) {
+      console.error('Error updating property status:', error);
+      toast.error('Failed to update property status');
+    }
+  };
+
+  const cancelAction = () => {
+    setActionProperty(null);
+    setActionType(null);
+    setRejectionReason('');
   };
 
   // Filter properties based on search and tab
@@ -274,14 +349,75 @@ const AllPropertiesPage = () => {
                         </div>
 
                         {/* Actions */}
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleViewProperty(property)}
-                        >
-                          <Eye className="w-4 h-4 mr-2" />
-                          View Details
-                        </Button>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleViewProperty(property)}
+                          >
+                            <Eye className="w-4 h-4 mr-2" />
+                            View
+                          </Button>
+
+                          {/* Show Approve button for rejected/suspended properties */}
+                          {property.verificationStatus === 'rejected' && (
+                            <Button
+                              variant="default"
+                              size="sm"
+                              onClick={() => handleApprove(property)}
+                              className="bg-green-500 hover:bg-green-600"
+                            >
+                              <CheckCircle className="w-4 h-4 mr-2" />
+                              Approve
+                            </Button>
+                          )}
+
+                          {/* Show Reject/Suspend buttons for approved properties */}
+                          {property.verificationStatus === 'approved' && (
+                            <>
+                              <Button
+                                variant="destructive"
+                                size="sm"
+                                onClick={() => handleReject(property)}
+                              >
+                                <XCircle className="w-4 h-4 mr-2" />
+                                Reject
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleSuspend(property)}
+                                className="border-orange-500 text-orange-500 hover:bg-orange-50"
+                              >
+                                <Ban className="w-4 h-4 mr-2" />
+                                Suspend
+                              </Button>
+                            </>
+                          )}
+
+                          {/* Show Approve/Reject for pending properties */}
+                          {property.verificationStatus === 'pending' && (
+                            <>
+                              <Button
+                                variant="default"
+                                size="sm"
+                                onClick={() => handleApprove(property)}
+                                className="bg-green-500 hover:bg-green-600"
+                              >
+                                <CheckCircle className="w-4 h-4 mr-2" />
+                                Approve
+                              </Button>
+                              <Button
+                                variant="destructive"
+                                size="sm"
+                                onClick={() => handleReject(property)}
+                              >
+                                <XCircle className="w-4 h-4 mr-2" />
+                                Reject
+                              </Button>
+                            </>
+                          )}
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -298,6 +434,54 @@ const AllPropertiesPage = () => {
         open={isModalOpen}
         onClose={handleCloseModal}
       />
+
+      {/* Action Confirmation Dialog */}
+      <AlertDialog open={!!actionProperty} onOpenChange={(open) => !open && cancelAction()}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {actionType === 'approve' && 'Approve Property'}
+              {actionType === 'reject' && 'Reject Property'}
+              {actionType === 'suspend' && 'Suspend Property'}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {actionType === 'approve' && (
+                <>Are you sure you want to approve this property? The owner will be notified via email.</>
+              )}
+              {actionType === 'reject' && (
+                <>
+                  <p className="mb-3">Are you sure you want to reject this property? The owner will be notified via email.</p>
+                  <Textarea
+                    placeholder="Reason for rejection (required)"
+                    value={rejectionReason}
+                    onChange={(e) => setRejectionReason(e.target.value)}
+                    className="min-h-[100px]"
+                  />
+                </>
+              )}
+              {actionType === 'suspend' && (
+                <>
+                  <p className="mb-3">Are you sure you want to suspend this property? It will be hidden from public view.</p>
+                  <Textarea
+                    placeholder="Reason for suspension (required)"
+                    value={rejectionReason}
+                    onChange={(e) => setRejectionReason(e.target.value)}
+                    className="min-h-[100px]"
+                  />
+                </>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={cancelAction}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmAction}>
+              {actionType === 'approve' && 'Approve'}
+              {actionType === 'reject' && 'Reject'}
+              {actionType === 'suspend' && 'Suspend'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </DashboardLayout>
   );
 };
