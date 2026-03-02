@@ -16,6 +16,8 @@ import { Label } from '../ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import LoadingSpinner from '../shared/LoadingSpinner';
 import ErrorMessage from '../shared/ErrorMessage';
+import { getDoc, doc } from 'firebase/firestore';
+import { auth, db } from '../../config/firebase.config';
 
 /**
  * LoginForm Component
@@ -98,6 +100,27 @@ export default function LoginForm() {
 
     try {
       await loginWithGoogle();
+      
+      // Check if user needs to complete registration
+      // New users will have verificationStatus as 'pending' and role as 'buyer' (default)
+      const currentUser = auth.currentUser;
+      if (currentUser) {
+        const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
+        if (userDoc.exists()) {
+          const userData = userDoc.data();
+          
+          // Check if this is a newly created user that needs to complete registration
+          // New users have: role='buyer', verificationStatus='pending', and no phone number
+          if (userData.verificationStatus === 'pending' && 
+              userData.role === 'buyer' && 
+              (!userData.profile?.phone || userData.profile.phone === '')) {
+            console.log('🆕 New user detected, redirecting to registration');
+            navigate('/register');
+            return;
+          }
+        }
+      }
+      
       navigate('/dashboard');
     } catch (err) {
       console.error('Google sign-in error:', err);

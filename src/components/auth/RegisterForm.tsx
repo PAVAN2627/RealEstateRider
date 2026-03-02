@@ -10,7 +10,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { UserRole } from '../../types/user.types';
+import { UserRole, VerificationStatus } from '../../types/user.types';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
@@ -20,7 +20,7 @@ import { Upload } from 'lucide-react';
 import LoadingSpinner from '../shared/LoadingSpinner';
 import ErrorMessage from '../shared/ErrorMessage';
 import { uploadAadharDocument, uploadSelfiePhoto } from '../../services/storageService';
-import { updateDoc, doc } from 'firebase/firestore';
+import { updateDoc, doc, Timestamp, getDoc } from 'firebase/firestore';
 import { db, auth } from '../../config/firebase.config';
 
 export default function RegisterForm() {
@@ -199,20 +199,42 @@ export default function RegisterForm() {
       // Update user document with additional info
       const userRef = doc(db, 'users', googleUser.uid);
       
-      // Determine verification status
+      // Determine verification status based on role
       const verificationStatus = 
         role === UserRole.BUYER || role === UserRole.ADMIN
-          ? 'approved'
-          : 'pending';
+          ? VerificationStatus.APPROVED
+          : VerificationStatus.PENDING;
       
-      // Update user document
-      await updateDoc(userRef, {
-        role: role as UserRole,
+      // Prepare update data - use merge to ensure we don't lose any fields
+      const updateData: any = {
+        role: role as UserRole, // Update the role
         verificationStatus,
-        profile: {
-          name: name || googleUser.name,
-          phone: phone.trim()
-        }
+        'profile.name': name || googleUser.name,
+        'profile.phone': phone.trim(),
+        updatedAt: Timestamp.now()
+      };
+      
+      console.log('🔄 Updating user document:', {
+        uid: googleUser.uid,
+        currentRole: 'buyer (default)',
+        newRole: role,
+        verificationStatus,
+        updateData
+      });
+      
+      // Update user document with merge option
+      await updateDoc(userRef, updateData);
+      
+      // Wait a moment to ensure Firestore has processed the update
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Verify the update by reading back
+      const updatedDoc = await getDoc(userRef);
+      const updatedData = updatedDoc.data();
+      console.log('✅ User document updated. Verification:', {
+        storedRole: updatedData?.role,
+        expectedRole: role,
+        match: updatedData?.role === role
       });
       
       // Upload documents for Sellers and Agents
@@ -234,19 +256,13 @@ export default function RegisterForm() {
         }
       }
       
-      // Redirect based on role
-      if (role === UserRole.ADMIN) {
-        navigate('/dashboard');
-      } else if (role === UserRole.SELLER || role === UserRole.AGENT) {
-        // Show success message for pending approval
-        const roleLabel = role === UserRole.SELLER ? 'Seller' : 'Agent';
-        alert(`Registration successful! Your ${roleLabel} account is pending admin approval. You will be notified once approved.`);
-        navigate('/pending-approval');
-      } else {
-        navigate('/dashboard');
-      }
+      // Force refresh the auth context to get updated user data
+      window.location.href = role === UserRole.ADMIN || role === UserRole.BUYER 
+        ? '/dashboard' 
+        : '/pending-approval';
+        
     } catch (err) {
-      console.error('Registration error:', err);
+      console.error('❌ Registration error:', err);
       setError(err instanceof Error ? err.message : 'Registration failed');
     } finally {
       setLoading(false);
