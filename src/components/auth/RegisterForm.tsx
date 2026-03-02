@@ -143,8 +143,24 @@ export default function RegisterForm() {
       if (role === UserRole.ADMIN) {
         if (!adminSecretKey || adminSecretKey.trim().length === 0) {
           errors.adminSecretKey = 'Admin secret key is required';
-        } else if (adminSecretKey !== import.meta.env.VITE_ADMIN_SECRET_KEY) {
-          errors.adminSecretKey = 'Invalid admin secret key';
+        } else {
+          const expectedKey = import.meta.env.VITE_ADMIN_SECRET_KEY;
+          
+          // Debug logging (remove in production)
+          console.log('Admin key validation:', {
+            provided: adminSecretKey,
+            expected: expectedKey,
+            envVarExists: !!expectedKey,
+            match: adminSecretKey.trim() === expectedKey?.trim()
+          });
+          
+          // Check if environment variable is set
+          if (!expectedKey) {
+            errors.adminSecretKey = 'Admin registration is not configured. Please contact support.';
+            console.error('VITE_ADMIN_SECRET_KEY environment variable is not set!');
+          } else if (adminSecretKey.trim() !== expectedKey.trim()) {
+            errors.adminSecretKey = `Invalid admin secret key. Expected: ${expectedKey}`;
+          }
         }
       }
 
