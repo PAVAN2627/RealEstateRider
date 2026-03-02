@@ -151,30 +151,43 @@ export async function signInWithGoogle(): Promise<User> {
   // Configure provider for better UX
   provider.setCustomParameters({
     prompt: 'select_account', // Always show account selection
-    // Add these to help with popup issues
     display: 'popup',
   });
 
   let userCredential;
   let retryCount = 0;
-  const maxRetries = 2; // Allow two automatic retries
+  const maxRetries = 3; // Allow three automatic retries
+  const retryDelays = [600, 1000, 1500]; // Progressive delays
 
   while (retryCount <= maxRetries) {
     try {
       userCredential = await signInWithPopup(auth, provider);
+      
+      // Success! Log if it took retries
+      if (retryCount > 0) {
+        console.log(`✅ Sign-in succeeded on attempt ${retryCount + 1}`);
+      }
+      
       break; // Success, exit loop
     } catch (popupError: any) {
-      console.log(`Sign-in attempt ${retryCount + 1} failed:`, popupError.code, popupError.message);
+      const attemptNum = retryCount + 1;
       
-      // On first two attempts, if we get specific errors, retry silently
-      if (retryCount < maxRetries && 
-          (popupError.code === 'auth/cancelled-popup-request' || 
-           popupError.code === 'auth/internal-error' ||
-           popupError.message?.includes('INTERNAL ASSERTION FAILED'))) {
-        console.log('Retrying automatically...');
+      // Log the error for debugging
+      console.log(`❌ Sign-in attempt ${attemptNum} failed:`, popupError.code);
+      
+      // Check if this is a retryable error
+      const isRetryableError = 
+        popupError.code === 'auth/cancelled-popup-request' || 
+        popupError.code === 'auth/internal-error' ||
+        popupError.message?.includes('INTERNAL ASSERTION FAILED') ||
+        popupError.message?.includes('Pending promise was never set');
+      
+      // If we can retry and it's a retryable error, do so
+      if (retryCount < maxRetries && isRetryableError) {
+        const delay = retryDelays[retryCount] || 1500;
+        console.log(`🔄 Retrying in ${delay}ms...`);
         retryCount++;
-        // Slightly longer delay before retry
-        await new Promise(resolve => setTimeout(resolve, 800));
+        await new Promise(resolve => setTimeout(resolve, delay));
         continue;
       }
 
@@ -191,11 +204,13 @@ export async function signInWithGoogle(): Promise<User> {
         throw new Error('Google Sign-In is not enabled. Please contact support.');
       }
       
-      // If we've already retried or it's a different error, throw it
+      // If we've exhausted retries
       if (retryCount >= maxRetries) {
+        console.error('❌ Sign-in failed after all retry attempts');
         throw new Error('Sign-in failed after multiple attempts. Please refresh the page and try again.');
       }
       
+      // Unknown error, throw it
       throw popupError;
     }
   }
