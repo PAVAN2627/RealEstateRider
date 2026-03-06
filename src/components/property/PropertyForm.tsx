@@ -249,22 +249,19 @@ export default function PropertyForm({ property, onSuccess, onCancel, mode, show
       newErrors.images = 'Maximum 10 images allowed';
     }
 
-    // Coordinates validation (both or neither)
-    const hasLat = formData.latitude.trim() !== '';
-    const hasLng = formData.longitude.trim() !== '';
-    if (hasLat !== hasLng) {
-      newErrors.coordinates = 'Both latitude and longitude are required for coordinates';
-    }
-    if (hasLat && hasLng) {
+    // Coordinates validation (mandatory)
+    if (!formData.latitude.trim()) {
+      newErrors.coordinates = 'Latitude is required';
+    } else if (!formData.longitude.trim()) {
+      newErrors.coordinates = 'Longitude is required';
+    } else {
       const lat = parseFloat(formData.latitude);
       const lng = parseFloat(formData.longitude);
       if (isNaN(lat) || isNaN(lng)) {
         newErrors.coordinates = 'Invalid coordinates format';
-      }
-      if (lat < -90 || lat > 90) {
+      } else if (lat < -90 || lat > 90) {
         newErrors.coordinates = 'Latitude must be between -90 and 90';
-      }
-      if (lng < -180 || lng > 180) {
+      } else if (lng < -180 || lng > 180) {
         newErrors.coordinates = 'Longitude must be between -180 and 180';
       }
     }
@@ -399,13 +396,11 @@ export default function PropertyForm({ property, onSuccess, onCancel, mode, show
         pincode: formData.pincode.trim(),
       };
 
-      // Only add coordinates if both lat and lng are provided
-      if (formData.latitude && formData.longitude) {
-        location.coordinates = {
-          lat: parseFloat(formData.latitude),
-          lng: parseFloat(formData.longitude),
-        };
-      }
+      // Add coordinates (now mandatory)
+      location.coordinates = {
+        lat: parseFloat(formData.latitude),
+        lng: parseFloat(formData.longitude),
+      };
 
       if (isEditMode && property) {
         // Update existing property
@@ -718,10 +713,12 @@ export default function PropertyForm({ property, onSuccess, onCancel, mode, show
           </div>
         </div>
 
-        {/* Coordinates (Optional) */}
+        {/* Coordinates (Mandatory) */}
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <Label>Property Location Coordinates</Label>
+            <Label>
+              Property Location Coordinates <span className="text-red-500">*</span>
+            </Label>
             <Button
               type="button"
               variant="outline"
@@ -733,7 +730,7 @@ export default function PropertyForm({ property, onSuccess, onCancel, mode, show
             </Button>
           </div>
           <p className="text-sm text-muted-foreground">
-            Enter the property address, city, state, and pincode above, then click the button to automatically get coordinates for the property location.
+            Enter the property address, city, state, and pincode above, then click the button to automatically get coordinates for the property location. Coordinates are required.
           </p>
           {locationError && (
             <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 px-3 py-2 rounded text-sm">
@@ -792,7 +789,9 @@ export default function PropertyForm({ property, onSuccess, onCancel, mode, show
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="latitude">Latitude</Label>
+              <Label htmlFor="latitude">
+                Latitude <span className="text-red-500">*</span>
+              </Label>
               <Input
                 id="latitude"
                 name="latitude"
@@ -805,7 +804,9 @@ export default function PropertyForm({ property, onSuccess, onCancel, mode, show
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="longitude">Longitude</Label>
+              <Label htmlFor="longitude">
+                Longitude <span className="text-red-500">*</span>
+              </Label>
               <Input
                 id="longitude"
                 name="longitude"
