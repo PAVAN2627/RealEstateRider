@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import PropertyFilters from '@/components/property/PropertyFilters';
 import PropertyList from '@/components/property/PropertyList';
 import LoadingSpinner from '@/components/shared/LoadingSpinner';
@@ -27,12 +27,7 @@ import { useProperties } from '@/context/PropertyContext';
 const PropertiesPage = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const { user } = useAuth();
-  const { refreshProperties, setFilters } = useProperties();
-
-  // Load properties on mount
-  useEffect(() => {
-    refreshProperties();
-  }, []);
+  const { setFilters } = useProperties();
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;

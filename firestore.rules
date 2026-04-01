@@ -61,10 +61,10 @@ service cloud.firestore {
 
     // Properties collection rules
     match /properties/{propertyId} {
-      // All authenticated users can read approved properties
+      // Anyone (including unauthenticated) can read approved properties for browsing
       // Property owners can read their own properties (any status)
       // Admins can read all properties
-      allow read: if (isAuthenticated() && resource.data.verificationStatus == 'approved') ||
+      allow read: if resource.data.verificationStatus == 'approved' ||
                      (isAuthenticated() && resource.data.ownerId == request.auth.uid) ||
                      isAdmin();
       

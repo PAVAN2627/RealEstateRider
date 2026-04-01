@@ -21,8 +21,6 @@ import {
   query,
   where,
   Timestamp,
-  Query,
-  DocumentData,
   writeBatch
 } from 'firebase/firestore';
 import { db } from '../config/firebase.config';
@@ -252,63 +250,54 @@ export async function getProperty(propertyId: string): Promise<Property | null> 
  */
 export async function getProperties(filters?: PropertyFilters): Promise<Property[]> {
   try {
-    let q: Query<DocumentData> = collection(db, 'properties');
-    
+    // Always filter by approved status — Firestore rejects the entire query
+    // if any returned document would fail the security rules
+    const constraints: any[] = [where('verificationStatus', '==', 'approved')];
+
     // Apply filters if provided
     if (filters) {
-      const constraints = [];
-      
-      // Filter by property type
       if (filters.propertyType && filters.propertyType.length > 0) {
         constraints.push(where('propertyType', 'in', filters.propertyType));
       }
-      
-      // Filter by availability status
+
       if (filters.availabilityStatus && filters.availabilityStatus.length > 0) {
         constraints.push(where('availabilityStatus', 'in', filters.availabilityStatus));
       }
-      
-      // Note: Price range and location filtering require client-side filtering
-      // or composite indexes. For now, we'll fetch all and filter client-side.
-      
-      if (constraints.length > 0) {
-        q = query(q, ...constraints);
-      }
     }
-    
+
+    const q = query(collection(db, 'properties'), ...constraints);
     const querySnapshot = await getDocs(q);
     let properties = querySnapshot.docs.map(doc => ({
       id: doc.id,
       ...doc.data()
     } as Property));
-    
-    // Apply client-side filters for price range, location, and configuration
+
+    // Client-side filters for fields that can't be combined with Firestore 'in' queries
     if (filters) {
       if (filters.priceMin !== undefined) {
         properties = properties.filter(p => p.price >= filters.priceMin!);
       }
-      
+
       if (filters.priceMax !== undefined) {
         properties = properties.filter(p => p.price <= filters.priceMax!);
       }
-      
+
       if (filters.location) {
         const locationLower = filters.location.toLowerCase();
-        properties = properties.filter(p => 
+        properties = properties.filter(p =>
           p.location.address.toLowerCase().includes(locationLower) ||
           p.location.city.toLowerCase().includes(locationLower) ||
           p.location.state.toLowerCase().includes(locationLower)
         );
       }
-      
-      // Filter by configuration
+
       if (filters.configuration && filters.configuration.length > 0) {
-        properties = properties.filter(p => 
+        properties = properties.filter(p =>
           p.configuration && filters.configuration!.includes(p.configuration)
         );
       }
     }
-    
+
     return properties;
   } catch (error) {
     console.error('Error getting properties:', error);

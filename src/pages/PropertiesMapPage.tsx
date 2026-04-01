@@ -63,13 +63,6 @@ const PropertiesMapPage = () => {
   const propertiesWithCoordinates = properties.filter(
     (p) => p.verificationStatus === 'approved' && p.location.coordinates
   );
-
-  // Load properties on mount
-  useEffect(() => {
-    refreshProperties();
-  }, []);
-
-  // Initialize map
   useEffect(() => {
     if (propertiesWithCoordinates.length === 0) {
       setMapLoading(false);
