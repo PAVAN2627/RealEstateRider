@@ -40,9 +40,12 @@ service cloud.firestore {
     // Users collection rules
     match /users/{userId} {
       // Users can read their own document, admins can read all
-      allow read: if isOwner(userId) || isAdmin();
+      // Note: isAdmin() is only called when the user is NOT the owner to avoid
+      // recursive get() failures for new users whose document doesn't exist yet
+      allow read: if isOwner(userId) || (isAuthenticated() && isAdmin());
       
-      // Users can create their own document during registration
+      // Users can create their own document during registration (Google sign-in or email)
+      // Only requires authentication - no role check to avoid chicken-and-egg problem
       allow create: if isOwner(userId);
       
       // Users can update their own document (except role and verificationStatus)
